@@ -22,15 +22,18 @@ services:
       - "postgres"
     ports:
       - 8080:8080
+    env_file:
+      - "local.env"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: postgres
       DB_USER: postgres
       DB_PASS: postgres
-      TMP_UPLOAD_BUCKET_NAME: "" 
-      PERSISTIBLE_BUCKET_NAME: ""
-      SENDGRID_API_KEY: ""
+      # -- SET variables to local.env
+      # TMP_UPLOAD_BUCKET_NAME: "" 
+      # PERSISTIBLE_BUCKET_NAME: ""
+      # SENDGRID_API_KEY: ""
 
 volumes:
     postgres:
