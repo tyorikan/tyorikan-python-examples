@@ -8,6 +8,7 @@ from uuid import uuid4
 from google.cloud import storage
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from pathlib import Path
 
 import os
 import psycopg2
@@ -28,18 +29,14 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def upload_image(image: UploadFile = File(...)):
     # バケット名とBlob名を作成
     bucket_name = os.getenv("TMP_UPLOAD_BUCKET_NAME")
-    blob_name = f"{uuid4()}.jpg"
-
-    # 画像をリサイズ
-    image_bytes = await image.read()
-    image = Image.open(BytesIO(image_bytes))
-    image = image.resize((256, 256))
+    suffix = Path(image.filename).suffix
+    blob_name = f"{uuid4()}{suffix}"
 
     # Cloud Storage にアップロード
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
-    blob.upload_from_file(image)
+    blob.upload_from_file(image.file, content_type=image.content_type)
 
     # オブジェクトパスを返す
     return {"object_path": blob.name}
