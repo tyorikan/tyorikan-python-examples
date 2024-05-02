@@ -1,17 +1,15 @@
-from fastapi import FastAPI, File, UploadFile, Request
+import os
+from pathlib import Path
+from uuid import uuid4
+
+import psycopg2
+from fastapi import FastAPI, File, Request, Response, UploadFile, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from io import BytesIO
-from PIL import Image
-from uuid import uuid4
 from google.cloud import storage
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-from pathlib import Path
-
-import os
-import psycopg2
 
 app = FastAPI()
 
@@ -24,6 +22,7 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.post("/upload-image")
 async def upload_image(image: UploadFile = File(...)):
@@ -41,14 +40,17 @@ async def upload_image(image: UploadFile = File(...)):
     # オブジェクトパスを返す
     return {"object_path": blob.name}
 
+
 @app.post("/incidents")
-def save_incidents(request: Request):
+async def save_incidents(request: Request):
     # 1. Validate request body
     try:
-        request_data = request.json()
+        request_data = await request.json()
+        print(request_data)
         validate_request_data(request_data)
     except Exception as e:
-        return HTMLResponse(content=str(e), status_code=400)
+        print(e)
+        return Response(status_code=status.HTTP_400_BAD_REQUEST)
 
     # 2. Move Object data from tmp bucket to persistible　bucket
     move_object(request_data["image_path"])
@@ -60,15 +62,18 @@ def save_incidents(request: Request):
     send_email(request_data)
 
     # 5. Return success response
-    return HTMLResponse("User saved successfully")
+    return Response(status_code=status.HTTP_201_CREATED)
+
 
 @app.get("/")
 def index(request: Request):
     return HTMLResponse(content=open("static/index.html").read(), status_code=200)
 
+
 def validate_request_data(data):
     # TODO: Implement request data validation
     return
+
 
 def move_object(object_path):
     """
@@ -85,12 +90,11 @@ def move_object(object_path):
     source_bucket = storage_client.bucket(tmp_bucket_name)
     source_blob = source_bucket.blob(object_path)
     destination_bucket = storage_client.bucket(persistible_bucket_name)
-    destination_blob = destination_bucket.blob(object_path)
-    destination_blob.content_type = "image/png"
-    destination_blob.copy_from(source_blob)
+    source_bucket.copy_blob(source_blob, destination_bucket, object_path)
 
     # 元のオブジェクトを削除
-    source_blob.delete()
+    # source_blob.delete()
+
 
 def save_to_db(data):
     """
@@ -106,66 +110,90 @@ def save_to_db(data):
     )
     cur = conn.cursor()
 
-    # テーブル名を取得
-    table_name = "incidents"
+    # トランザクションを開始
+    cur.execute("BEGIN TRANSACTION;")
 
     # データを挿入
-    sql = f"""
-        INSERT INTO {table_name} (
-            title,
-            submit_date,
-            location_id,
-            department_id,
-            type,
-            occurred_at,
-            occurred_place_id,
-            occurred_place_detail,
-            cause_id,
-            witness_id,
-            witness_manager_id,
-            reporter_id,
-            reporter_phone_number,
-            manager_id,
-            worker_id,
-            work_members,
-            disaster_type_id,
-            injury_classification_id,
-            injured_part_id,
-            injury_description,
-            description,
-            image_path
-        )
-        VALUES (
-            %(title)s,
-            %(submit_date)s,
-            %(location_id)s,
-            %(department_id)s,
-            %(type)s,
-            %(occurred_at)s,
-            %(occurred_place_id)s,
-            %(occurred_place_detail)s,
-            %(cause_id)s,
-            %(witness_id)s,
-            %(witness_manager_id)s,
-            %(reporter_id)s,
-            %(reporter_phone_number)s,
-            %(manager_id)s,
-            %(worker_id)s,
-            %(work_members)s,
-            %(disaster_type_id)s,
-            %(injury_classification_id)s,
-            %(injured_part_id)s,
-            %(injury_description)s,
-            %(description)s,
-            %(image_path)s
-        );
-    """
-    cur.execute(sql, data)
-    conn.commit()
+    try:
+        # incidents テーブルにデータを挿入
+        incidents_sql = """
+            INSERT INTO incidents (
+                title,
+                submit_date,
+                location_id,
+                department_id,
+                type,
+                occurred_at,
+                occurred_place_id,
+                occurred_place_detail,
+                cause_id,
+                witness_id,
+                witness_manager_id,
+                reporter_id,
+                reporter_phone_number,
+                manager_id,
+                worker_id,
+                work_members,
+                disaster_type_id,
+                injury_classification_id,
+                injured_part_id,
+                injury_description
+            )
+            VALUES (
+                %(title)s,
+                %(submit_date)s,
+                %(location_id)s,
+                %(department_id)s,
+                %(type)s,
+                %(occurred_at)s,
+                %(occurred_place_id)s,
+                %(occurred_place_detail)s,
+                %(cause_id)s,
+                %(witness_id)s,
+                %(witness_manager_id)s,
+                %(reporter_id)s,
+                %(reporter_phone_number)s,
+                %(manager_id)s,
+                %(worker_id)s,
+                %(work_members)s,
+                %(disaster_type_id)s,
+                %(injury_classification_id)s,
+                %(injured_part_id)s,
+                %(injury_description)s
+            )
+            RETURNING id;
+        """
+        cur.execute(incidents_sql, data)
+        incident_id = cur.fetchone()[0]
 
-    # カーソルと接続を閉じる
-    cur.close()
-    conn.close()
+        # incident_occurrences テーブルにデータを挿入
+        incident_occurrences_sql = """
+            INSERT INTO incident_occurrences (
+                incident_id,
+                description,
+                image_path
+            )
+            VALUES (
+                %(incident_id)s,
+                %(description)s,
+                %(image_path)s
+            );
+        """
+        data["incident_id"] = incident_id
+        cur.execute(incident_occurrences_sql, data)
+
+        conn.commit()
+
+    except Exception as e:
+        # エラーが発生した場合はロールバック
+        conn.rollback()
+        raise e
+
+    finally:
+        # カーソルと接続を閉じる
+        cur.close()
+        conn.close()
+
 
 def send_email(data):
     """
@@ -186,15 +214,8 @@ def send_email(data):
         <p>場所: {data["occurred_place_detail"]}</p>
         <p>詳細: {data["description"]}</p>
         <p>画像: {data["image_path"]}</p>
-        """
+        """,
     )
 
     # メールを送信
-    try:
-        sg = SendGridAPIClient(sendgrid_api_key)
-        response = sg.send(message)
-        print(response.status_code)
-        print(response.body)
-        print(response.headers)
-    except Exception as e:
-        print(e.message)
+    SendGridAPIClient(sendgrid_api_key).send(message)
