@@ -93,7 +93,7 @@ def move_object(object_path):
     source_bucket.copy_blob(source_blob, destination_bucket, object_path)
 
     # 元のオブジェクトを削除
-    # source_blob.delete()
+    source_blob.delete()
 
 
 def save_to_db(data):
