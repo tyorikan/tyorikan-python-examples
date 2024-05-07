@@ -1,17 +1,26 @@
 import os
+import sys
 from pathlib import Path
 from uuid import uuid4
 
+import jwt
 import psycopg2
+import requests
 from fastapi import FastAPI, File, Request, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from google.cloud import storage
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 app = FastAPI()
+security = HTTPBearer()
+
+CERTS = None
+AUDIENCE = None
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +31,89 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# [START getting_started_auth_certs]
+def certs():
+    """Returns a dictionary of current Google public key certificates for
+    validating Google-signed JWTs. Since these change rarely, the result
+    is cached on first request for faster subsequent responses.
+    """
+
+    global CERTS
+    if CERTS is None:
+        response = requests.get("https://www.gstatic.com/iap/verify/public_key")
+        CERTS = response.json()
+    return CERTS
+
+
+# [END getting_started_auth_certs]
+
+
+# [START getting_started_auth_metadata]
+def get_metadata(item_name):
+    """Returns a string with the project metadata value for the item_name.
+    See https://cloud.google.com/compute/docs/storing-retrieving-metadata for
+    possible item_name values.
+    """
+    endpoint = "http://metadata.google.internal"
+    path = "/computeMetadata/v1/project/"
+    path += item_name
+    response = requests.get(
+        "{}{}".format(endpoint, path), headers={"Metadata-Flavor": "Google"}
+    )
+    metadata = response.text
+    return metadata
+
+
+# [END getting_started_auth_metadata]
+
+
+# [START getting_started_auth_audience]
+def audience():
+    """Returns the audience value (the JWT 'aud' property) for the current
+    running instance. Since this involves a metadata lookup, the result is
+    cached when first requested for faster future responses.
+    """
+    global AUDIENCE
+    if AUDIENCE is None:
+        project_number = get_metadata("numeric-project-id")
+        project_id = get_metadata("project-id")
+        AUDIENCE = "/projects/{}/apps/{}".format(project_number, project_id)
+    return AUDIENCE
+
+
+# [END getting_started_auth_audience]
+
+
+# [START getting_started_auth_validate_assertion]
+def validate_assertion(assertion):
+    """Checks that the JWT assertion is valid (properly signed, for the
+    correct audience) and if so, returns strings for the requesting user's
+    email and a persistent user ID. If not valid, returns None for each field.
+    """
+
+    try:
+        info = jwt.decode(assertion, certs(), algorithms=["ES256"], audience=audience())
+        return info["email"], info["sub"]
+    except Exception as e:
+        print("Failed to validate assertion: {}".format(e), file=sys.stderr)
+        return None, None
+
+
+# [END getting_started_auth_validate_assertion]
+
+
+@app.middleware("http")
+async def jwt_authentication_middleware(request: Request, call_next):
+    assertion = request.headers.get("X-Goog-IAP-JWT-Assertion")
+    if assertion is None:
+        return Response(status_code=status.HTTP_403_FORBIDDEN)
+    email, id = validate_assertion(assertion)
+
+    request.email = email
+    request.uid = id
+    return await call_next(request)
 
 
 @app.post("/upload-image")
