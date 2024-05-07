@@ -6,4 +6,5 @@ python-multipart==0.0.9
 sqlalchemy==2.0.29
 psycopg2==2.9.9
 sendgrid==6.11.0
+cryptography==42.0.7
 google-auth==2.29.0
