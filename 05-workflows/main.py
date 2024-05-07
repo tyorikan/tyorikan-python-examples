@@ -67,6 +67,7 @@ async def save_incidents(request: Request):
 
 @app.get("/")
 def index(request: Request):
+    print(request.headers)
     return HTMLResponse(content=open("static/index.html").read(), status_code=200)
 
 
@@ -93,7 +94,7 @@ def move_object(object_path):
     source_bucket.copy_blob(source_blob, destination_bucket, object_path)
 
     # 元のオブジェクトを削除
-    source_blob.delete()
+    # source_blob.delete()
 
 
 def save_to_db(data):
@@ -204,7 +205,7 @@ def send_email(data):
 
     # メールを作成
     message = Mail(
-        from_email=os.getenv("MAIL_SENDER"),
+        from_email="sender@example.com",
         to_emails=["recipient@example.com"],
         subject="Incident Report",
         html_content=f"""

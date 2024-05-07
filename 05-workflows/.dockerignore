@@ -1,6 +1,5 @@
 Dockerfile
 docker-compose.yaml
-*.env
 __pycache__
 image/*
 sql/*
