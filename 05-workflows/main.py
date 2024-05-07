@@ -1,25 +1,21 @@
 import os
-import sys
 from pathlib import Path
 from uuid import uuid4
 
-import jwt
 import psycopg2
-import requests
 from fastapi import FastAPI, File, Request, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from google.auth.transport import requests
 from google.cloud import storage
+from google.oauth2 import id_token
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 app = FastAPI()
 security = HTTPBearer()
-
-CERTS = None
-AUDIENCE = None
 
 
 app.add_middleware(
@@ -33,75 +29,28 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# [START getting_started_auth_certs]
-def certs():
-    """Returns a dictionary of current Google public key certificates for
-    validating Google-signed JWTs. Since these change rarely, the result
-    is cached on first request for faster subsequent responses.
+def validate_iap_jwt(iap_jwt, expected_audience):
+    """Validate an IAP JWT.
+
+    Args:
+      iap_jwt: The contents of the X-Goog-IAP-JWT-Assertion header.
+      expected_audience: The Signed Header JWT audience. See
+          https://cloud.google.com/iap/docs/signed-headers-howto
+          for details on how to get this value.
+
+    Returns:
+      (user_id, user_email, error_str).
     """
-
-    global CERTS
-    if CERTS is None:
-        response = requests.get("https://www.gstatic.com/iap/verify/public_key")
-        CERTS = response.json()
-    return CERTS
-
-
-# [END getting_started_auth_certs]
-
-
-# [START getting_started_auth_metadata]
-def get_metadata(item_name):
-    """Returns a string with the project metadata value for the item_name.
-    See https://cloud.google.com/compute/docs/storing-retrieving-metadata for
-    possible item_name values.
-    """
-    endpoint = "http://metadata.google.internal"
-    path = "/computeMetadata/v1/project/"
-    path += item_name
-    response = requests.get(
-        "{}{}".format(endpoint, path), headers={"Metadata-Flavor": "Google"}
-    )
-    metadata = response.text
-    return metadata
-
-
-# [END getting_started_auth_metadata]
-
-
-# [START getting_started_auth_audience]
-def audience():
-    """Returns the audience value (the JWT 'aud' property) for the current
-    running instance. Since this involves a metadata lookup, the result is
-    cached when first requested for faster future responses.
-    """
-    global AUDIENCE
-    if AUDIENCE is None:
-        project_number = get_metadata("numeric-project-id")
-        project_id = get_metadata("project-id")
-        AUDIENCE = "/projects/{}/apps/{}".format(project_number, project_id)
-    return AUDIENCE
-
-
-# [END getting_started_auth_audience]
-
-
-# [START getting_started_auth_validate_assertion]
-def validate_assertion(assertion):
-    """Checks that the JWT assertion is valid (properly signed, for the
-    correct audience) and if so, returns strings for the requesting user's
-    email and a persistent user ID. If not valid, returns None for each field.
-    """
-
     try:
-        info = jwt.decode(assertion, certs(), algorithms=["ES256"], audience=audience())
-        return info["email"], info["sub"]
+        decoded_jwt = id_token.verify_token(
+            iap_jwt,
+            requests.Request(),
+            audience=expected_audience,
+            certs_url="https://www.gstatic.com/iap/verify/public_key",
+        )
+        return (decoded_jwt["sub"], decoded_jwt["email"], "")
     except Exception as e:
-        print("Failed to validate assertion: {}".format(e), file=sys.stderr)
-        return None, None
-
-
-# [END getting_started_auth_validate_assertion]
+        return (None, None, f"**ERROR: JWT validation error {e}**")
 
 
 @app.middleware("http")
@@ -109,10 +58,18 @@ async def jwt_authentication_middleware(request: Request, call_next):
     assertion = request.headers.get("X-Goog-IAP-JWT-Assertion")
     if assertion is None:
         return Response(status_code=status.HTTP_403_FORBIDDEN)
-    email, id = validate_assertion(assertion)
 
-    request.email = email
+    expected_audience = f"/projects/{os.getenv('PROJECT_NUMBER')}/global/backendServices/{os.getenv('BACKEND_SERVICE_ID')}"
+
+    id, email, err = validate_iap_jwt(assertion, expected_audience)
+    if err != "":
+        print(err)
+        return Response(status_code=status.HTTP_403_FORBIDDEN)
+
+    print(id, email)
+
     request.uid = id
+    request.email = email
     return await call_next(request)
 
 
@@ -160,6 +117,8 @@ async def save_incidents(request: Request):
 @app.get("/")
 def index(request: Request):
     print(request.headers)
+    print(f"uid= {request.uid}")
+    print(f"email= {request.email}")
     return HTMLResponse(content=open("static/index.html").read(), status_code=200)
 
 
