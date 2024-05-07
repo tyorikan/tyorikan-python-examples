@@ -48,7 +48,7 @@ def validate_iap_jwt(iap_jwt, expected_audience):
             audience=expected_audience,
             certs_url="https://www.gstatic.com/iap/verify/public_key",
         )
-        return (decoded_jwt["sub"], decoded_jwt["email"], "")
+        return (decoded_jwt["gcip"]["sub"], decoded_jwt["gcip"]["email"], "")
     except Exception as e:
         return (None, None, f"**ERROR: JWT validation error {e}**")
 
@@ -66,10 +66,9 @@ async def jwt_authentication_middleware(request: Request, call_next):
         print(err)
         return Response(status_code=status.HTTP_403_FORBIDDEN)
 
-    print(id, email)
+    request.state.uid = id
+    request.state.email = email
 
-    request.uid = id
-    request.email = email
     return await call_next(request)
 
 
@@ -117,8 +116,8 @@ async def save_incidents(request: Request):
 @app.get("/")
 def index(request: Request):
     print(request.headers)
-    print(f"uid= {request.uid}")
-    print(f"email= {request.email}")
+    print(f"uid= {request.state.uid}")
+    print(f"email= {request.state.email}")
     return HTMLResponse(content=open("static/index.html").read(), status_code=200)
 
 
