@@ -253,6 +253,10 @@ def send_email(data):
     # SendGrid API キーを取得
     sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
 
+    # API キーが無い場合、送信しない
+    if sendgrid_api_key is None:
+        return
+
     # メールを作成
     message = Mail(
         from_email="sender@example.com",
