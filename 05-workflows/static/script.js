@@ -30,7 +30,7 @@ demoForm.addEventListener('submit', async (event) => {
     // originalFormData.append("image_path", imagePath);
 
     // TODO: Dummy data
-    const originalFormData = {
+    const originalFormData = JSON.stringify({
       "title": "東京本社火災",
       "submit_date": "2023-01-01",
       "location_id": 1,
@@ -53,7 +53,7 @@ demoForm.addEventListener('submit', async (event) => {
       "injury_description": "軽度のやけど",
       "description": "出火場所は本社ビルの3階です。",
       "image_path": imagePath
-    }
+    });
 
     // フォームデータを API に送信
     const response = await fetch("/api/incidents", {
