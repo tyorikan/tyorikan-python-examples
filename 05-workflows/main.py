@@ -265,7 +265,7 @@ def send_email(data):
     message = Mail(
         from_email=os.getenv("MAIL_SENDER"),
         # to_emails=["recipient@example.com"],
-        to_email=os.getenv("MAIL_SENDER"),  # TODO: for demo
+        to_emails=[os.getenv("MAIL_SENDER")],  # TODO: for demo
         subject="Incident Report",
         html_content=f"""
         <p>新しいインシデントが報告されました。</p>
@@ -278,4 +278,7 @@ def send_email(data):
     )
 
     # メールを送信
-    SendGridAPIClient(sendgrid_api_key).send(message)
+    try:
+        SendGridAPIClient(sendgrid_api_key).send(message)
+    except Exception as e:
+        print(f"**ERROR: SendGrid API error {e}**")
