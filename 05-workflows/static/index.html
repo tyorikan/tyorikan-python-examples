@@ -1,21 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GOHS 第一報作成</title>
+  <title>DEMO 第一報作成</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>GOHS 第一報作成</h1>
-  <form id="gohs-form">
+  <h1>DEMO 第一報作成</h1>
+  <form id="demo-form">
     <!-- Input fields for various sections like 
-         提出日, 拠点/課, 種別, 発生日時, etc. --> 
-     <div class="form-group">
-       <label for="date">提出日:</label>
-       <input type="date" id="date" name="date">
-     </div>
-     <!-- Other form groups for different input types --> 
+         提出日, 拠点/課, 種別, 発生日時, etc. -->
+    <div class="form-group">
+      <label for="date">提出日:</label>
+      <input type="date" id="date" name="date">
+    </div>
+    <!-- Other form groups for different input types --> 
+    <!-- 画像アップロード用の input 要素を追加 -->
+    <div class="form-group">
+      <label for="image">画像:</label>
+      <input type="file" id="image" name="image" accept="image/*">
+    </div>
      
-     <button type="submit">発生状況の入力へ</button>
+     <button type="submit">登録</button>
   </form>
 
   <script src="/static/script.js"></script>
