@@ -263,8 +263,9 @@ def send_email(data):
 
     # メールを作成
     message = Mail(
-        from_email="sender@example.com",
-        to_emails=["recipient@example.com"],
+        from_email=os.getenv("MAIL_SENDER"),
+        # to_emails=["recipient@example.com"],
+        to_email=os.getenv("MAIL_SENDER"),  # TODO: for demo
         subject="Incident Report",
         html_content=f"""
         <p>新しいインシデントが報告されました。</p>

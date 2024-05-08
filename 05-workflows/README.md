@@ -12,6 +12,7 @@
 | TMP_UPLOAD_BUCKET_NAME | tmp-bucket | |
 | PERSISTIBLE_BUCKET_NAME | data-bucket | |
 | SENDGRID_API_KEY | XXxx.xxxxxxxx | ○ |
+| MAIL_SENDER | hoge@gmail.com | |
 
 ## SendGrid の準備  
 https://app.sendgrid.com/
