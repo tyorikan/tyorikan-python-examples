@@ -55,6 +55,10 @@ def validate_iap_jwt(iap_jwt, expected_audience):
 
 @app.middleware("http")
 async def jwt_authentication_middleware(request: Request, call_next):
+    # API は無視（実装でチェックさせる）
+    if request.url.path.startswith("/api"):
+        return await call_next(request)
+
     assertion = request.headers.get("X-Goog-IAP-JWT-Assertion")
     if assertion is None:
         return Response(status_code=status.HTTP_403_FORBIDDEN)
@@ -72,7 +76,15 @@ async def jwt_authentication_middleware(request: Request, call_next):
     return await call_next(request)
 
 
-@app.post("/upload-image")
+@app.get("/")
+def index(request: Request):
+    print(request.headers)
+    print(f"uid= {request.state.uid}")
+    print(f"email= {request.state.email}")
+    return HTMLResponse(content=open("static/index.html").read(), status_code=200)
+
+
+@app.post("/api/upload-image")
 async def upload_image(image: UploadFile = File(...)):
     # バケット名とBlob名を作成
     bucket_name = os.getenv("TMP_UPLOAD_BUCKET_NAME")
@@ -89,7 +101,7 @@ async def upload_image(image: UploadFile = File(...)):
     return {"object_path": blob.name}
 
 
-@app.post("/incidents")
+@app.post("/api/incidents")
 async def save_incidents(request: Request):
     # 1. Validate request body
     try:
@@ -111,14 +123,6 @@ async def save_incidents(request: Request):
 
     # 5. Return success response
     return Response(status_code=status.HTTP_201_CREATED)
-
-
-@app.get("/")
-def index(request: Request):
-    print(request.headers)
-    print(f"uid= {request.state.uid}")
-    print(f"email= {request.state.email}")
-    return HTMLResponse(content=open("static/index.html").read(), status_code=200)
 
 
 def validate_request_data(data):
@@ -144,7 +148,7 @@ def move_object(object_path):
     source_bucket.copy_blob(source_blob, destination_bucket, object_path)
 
     # 元のオブジェクトを削除
-    # source_blob.delete()
+    source_blob.delete()
 
 
 def save_to_db(data):
