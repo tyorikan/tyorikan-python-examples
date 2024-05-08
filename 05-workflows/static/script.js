@@ -27,6 +27,8 @@ demoForm.addEventListener('submit', async (event) => {
 
     // 元の FormData にダウンロード URL を追加
     // const originalFormData = new FormData(demoForm);
+    // originalFormData.append("image_path", imagePath);
+
     // TODO: Dummy data
     const originalFormData = {
       "title": "東京本社火災",
@@ -49,10 +51,9 @@ demoForm.addEventListener('submit', async (event) => {
       "injury_classification_id": 1,
       "injured_part_id": 1,
       "injury_description": "軽度のやけど",
-      "description": "出火場所は本社ビルの3階です。"
+      "description": "出火場所は本社ビルの3階です。",
+      "image_path": imagePath
     }
-
-    originalFormData.append("image_path", imagePath);
 
     // フォームデータを API に送信
     const response = await fetch("/api/incidents", {
