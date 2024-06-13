@@ -1,0 +1,1 @@
+web: mesop main.py --port ${PORT:-8080}
