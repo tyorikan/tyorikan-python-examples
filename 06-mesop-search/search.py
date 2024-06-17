@@ -41,10 +41,11 @@ class Search:
             # For information about search summaries, refer to:
             # https://cloud.google.com/generative-ai-app-builder/docs/get-search-summaries
             summary_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec(
-                summary_result_count=5,
+                summary_result_count=10,
                 include_citations=True,
                 ignore_adversarial_query=True,
                 ignore_non_summary_seeking_query=True,
+                use_semantic_chunks=True,
             ),
         )
 
@@ -53,7 +54,6 @@ class Search:
         request = discoveryengine.SearchRequest(
             serving_config=serving_config,
             query=search_query,
-            page_size=5,
             content_search_spec=content_search_spec,
             query_expansion_spec=discoveryengine.SearchRequest.QueryExpansionSpec(
                 condition=discoveryengine.SearchRequest.QueryExpansionSpec.Condition.AUTO,
