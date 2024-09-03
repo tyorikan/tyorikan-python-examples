@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package genai;
+
+service Generator {
+  rpc GenAIResponse(MessageRequest) returns (stream MessageResponse) {}
+}
+
+message MessageRequest {
+  string prompt = 1;
+}
+
+message MessageResponse {
+  string message = 1;
+}
