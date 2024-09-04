@@ -35,7 +35,7 @@ class GenAI(genai_pb2_grpc.GeneratorServicer):
 
 
 def serve():
-    port = "50051"
+    port = os.environ.get("PORT") or "50051"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     genai_pb2_grpc.add_GeneratorServicer_to_server(GenAI(), server)
     server.add_insecure_port("[::]:" + port)

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import logging
 import threading
 from typing import Sequence, Tuple
@@ -17,7 +18,11 @@ def wait_for_metadata(response_future, event):
 
 
 def run():
-    with grpc.insecure_channel("localhost:50051") as channel:
+    # with grpc.insecure_channel("localhost:50051") as channel:
+    with grpc.secure_channel(
+        os.environ["GRPC_ADDR"],
+        grpc.ssl_channel_credentials(),
+    ) as channel:
         stub = genai_pb2_grpc.GeneratorStub(channel)
 
         event_for_delay = threading.Event()
@@ -40,8 +45,8 @@ def run():
         )
         thread_with_delay.start()
 
-        # Wait on client side with 7 seconds timeout
-        timeout = 5
+        # Wait on client side with 10 seconds timeout
+        timeout = 10
         check_status(response_future_delay, event_for_delay.wait(timeout))
 
 
