@@ -23,15 +23,20 @@ generation_config = {
 
 class GenAI(genai_pb2_grpc.GeneratorServicer):
     def GenAIResponse(self, request, context):
-        responses = model.generate_content(
-            [request.prompt],
-            generation_config=generation_config,
-            stream=True,
-        )
+        try:
+            responses = model.generate_content(
+                [request.prompt],
+                generation_config=generation_config,
+                stream=True,
+            )
 
-        # Sending actual response.
-        for response in responses:
-            yield genai_pb2.MessageResponse(message=response.text)
+            # Sending actual response.
+            for response in responses:
+                yield genai_pb2.MessageResponse(message=response.text)
+        except ValueError as e:
+            yield genai_pb2.MessageResponse(
+                message="LLM からのデータ取得に失敗しました"
+            )
 
 
 def serve():
