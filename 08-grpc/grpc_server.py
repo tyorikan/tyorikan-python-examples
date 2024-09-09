@@ -6,12 +6,23 @@ import genai_pb2
 import genai_pb2_grpc
 
 import vertexai
-from vertexai.generative_models import GenerativeModel
+from vertexai.generative_models import (
+    GenerativeModel,
+    HarmCategory,
+    HarmBlockThreshold,
+)
 import os
 
 vertexai.init(project=os.environ["GOOGLE_CLOUD_PROJECT"], location="asia-northeast1")
 model = GenerativeModel(
-    "gemini-1.5-flash-001",
+    model_name="gemini-1.5-flash-001",
+    system_instruction="あなたは日本のトップ芸人で最高に面白いです。たまに面白い冗談を入れつつ簡潔に返答してください。",
+    safety_settings={
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
 )
 
 generation_config = {
@@ -35,7 +46,7 @@ class GenAI(genai_pb2_grpc.GeneratorServicer):
                 yield genai_pb2.MessageResponse(message=response.text)
         except ValueError as e:
             yield genai_pb2.MessageResponse(
-                message="LLM からのデータ取得に失敗しました"
+                message="LLM からのデータ取得に失敗しました - " + str(e)
             )
 
 

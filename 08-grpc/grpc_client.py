@@ -1,13 +1,13 @@
 from __future__ import print_function
 
-import os
 import logging
+import os
 import threading
 from typing import Sequence, Tuple
 
-import grpc
 import genai_pb2
 import genai_pb2_grpc
+import grpc
 
 
 def wait_for_metadata(response_future, event):
@@ -18,36 +18,37 @@ def wait_for_metadata(response_future, event):
 
 
 def run():
-    # with grpc.insecure_channel("localhost:50051") as channel:
-    with grpc.secure_channel(
+    with grpc.insecure_channel("localhost:50051") if os.environ.get(
+        "GRPC_ADDR"
+    ) is None else grpc.secure_channel(
         os.environ["GRPC_ADDR"],
         grpc.ssl_channel_credentials(),
     ) as channel:
         stub = genai_pb2_grpc.GeneratorStub(channel)
 
-        event_for_delay = threading.Event()
+        while True:
+            event_for_delay = threading.Event()
+            prompt = input(
+                "プロンプトを入力してください（終わりたいときは exit と入力して）："
+            )
+            if prompt == "exit":
+                break
 
-        response_future_delay = stub.GenAIResponse(
-            genai_pb2.MessageRequest(
-                prompt="""
-            あんたは、おかんのように口うるさいのが特徴や。
-            質問: Google Cloud のプロダクトの Cloud Run と Spanner を詳しく説明してや！
-            形式：マークダウン形式じゃなく、読みやすい素の文字列で返すんやで！
-                """
-            ),
-            wait_for_ready=True,
-        )
-        # Fire RPC and wait for metadata
-        thread_with_delay = threading.Thread(
-            target=wait_for_metadata,
-            args=(response_future_delay, event_for_delay),
-            daemon=True,
-        )
-        thread_with_delay.start()
+            response_future_delay = stub.GenAIResponse(
+                genai_pb2.MessageRequest(prompt=prompt),
+                wait_for_ready=True,
+            )
+            # Fire RPC and wait for metadata
+            thread_with_delay = threading.Thread(
+                target=wait_for_metadata,
+                args=(response_future_delay, event_for_delay),
+                daemon=True,
+            )
+            thread_with_delay.start()
 
-        # Wait on client side with 10 seconds timeout
-        timeout = 10
-        check_status(response_future_delay, event_for_delay.wait(timeout))
+            # Wait on client side with 10 seconds timeout
+            timeout = 10
+            check_status(response_future_delay, event_for_delay.wait(timeout))
 
 
 def check_status(response_future, wait_success):
