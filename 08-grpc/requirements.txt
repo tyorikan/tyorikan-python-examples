@@ -1,3 +1,4 @@
 google-cloud-aiplatform==1.64.0
 protobuf==5.28.0
 grpcio==1.66.1
+google-cloud-firestore==2.18.0

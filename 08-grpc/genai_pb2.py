@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bgenai.proto\x12\x05genai\" \n\x0eMessageRequest\x12\x0e\n\x06prompt\x18\x01 \x01(\t\"\"\n\x0fMessageResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2O\n\tGenerator\x12\x42\n\rGenAIResponse\x12\x15.genai.MessageRequest\x1a\x16.genai.MessageResponse\"\x00\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bgenai.proto\x12\x05genai\".\n\x0eMessageRequest\x12\x0e\n\x06prompt\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\"\"\n\x0fMessageResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2O\n\tGenerator\x12\x42\n\rGenAIResponse\x12\x15.genai.MessageRequest\x1a\x16.genai.MessageResponse\"\x00\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,9 +32,9 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'genai_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_MESSAGEREQUEST']._serialized_start=22
-  _globals['_MESSAGEREQUEST']._serialized_end=54
-  _globals['_MESSAGERESPONSE']._serialized_start=56
-  _globals['_MESSAGERESPONSE']._serialized_end=90
-  _globals['_GENERATOR']._serialized_start=92
-  _globals['_GENERATOR']._serialized_end=171
+  _globals['_MESSAGEREQUEST']._serialized_end=68
+  _globals['_MESSAGERESPONSE']._serialized_start=70
+  _globals['_MESSAGERESPONSE']._serialized_end=104
+  _globals['_GENERATOR']._serialized_start=106
+  _globals['_GENERATOR']._serialized_end=185
 # @@protoc_insertion_point(module_scope)

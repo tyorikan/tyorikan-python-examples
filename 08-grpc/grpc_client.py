@@ -3,6 +3,7 @@ from __future__ import print_function
 import logging
 import os
 import threading
+import uuid
 from typing import Sequence, Tuple
 
 import genai_pb2
@@ -25,6 +26,7 @@ def run():
         grpc.ssl_channel_credentials(),
     ) as channel:
         stub = genai_pb2_grpc.GeneratorStub(channel)
+        uid = uuid.uuid4()
 
         while True:
             event_for_delay = threading.Event()
@@ -35,7 +37,7 @@ def run():
                 break
 
             response_future_delay = stub.GenAIResponse(
-                genai_pb2.MessageRequest(prompt=prompt),
+                genai_pb2.MessageRequest(prompt=prompt, uuid=str(uid)),
                 wait_for_ready=True,
             )
             # Fire RPC and wait for metadata
