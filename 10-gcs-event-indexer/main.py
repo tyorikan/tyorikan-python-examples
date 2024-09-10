@@ -50,14 +50,13 @@ EMB_FIELD_NAME = "embedding"
 
 
 class Data(BaseModel):
-    bucket: str
     data: dict = Field(..., alias="data")
 
 
 @app.post("/events/gcs-indexer")
 async def gcs_event_indexer(data: Data, response: Response):
     """Cloud Storage イベントをトリガーにファイルを処理する"""
-    bucket_name = data.bucket
+    bucket_name = data.data["bucket"]
     file_name = data.data["name"]
 
     try:
