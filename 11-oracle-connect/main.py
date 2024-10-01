@@ -11,6 +11,9 @@ host = os.environ.get("ORACLE_HOST", "localhost")
 service_name = os.environ.get("ORACLE_SERVICE_NAME")
 port = os.environ.get("ORACLE_PORT", 1521)
 
+if os.environ.get("LD_LIBRARY_PATH"):
+    oracledb.init_oracle_client(lib_dir=os.environ.get("LD_LIBRARY_PATH"))
+
 conn = oracledb.connect(
     dsn="{}/{}".format(host, service_name),
     user=user,
