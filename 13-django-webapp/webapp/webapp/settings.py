@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-_^0ocpcvya@5aube+43fs!h^j4hw+=$!4^+p+xy=+#w=z=qb$b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "members",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -76,18 +77,18 @@ WSGI_APPLICATION = "webapp.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME"),
-        "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASS"),
-        "HOST": os.environ.get("DB_HOST"),
-        "PORT": os.environ.get("DB_PORT"),
-    }
     # "default": {
-    #    "ENGINE": "django.db.backends.sqlite3",
-    #    "NAME": BASE_DIR / "db.sqlite3",
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     "NAME": os.environ.get("DB_NAME"),
+    #     "USER": os.environ.get("DB_USER"),
+    #     "PASSWORD": os.environ.get("DB_PASS"),
+    #     "HOST": os.environ.get("DB_HOST"),
+    #     "PORT": os.environ.get("DB_PORT"),
     # }
+    "default": {
+       "ENGINE": "django.db.backends.sqlite3",
+       "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
 
@@ -131,3 +132,21 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Use Debug=True & Run `python manage.py collectstatic`
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'members/static/'),
+)
+
+# Define static storage via django-storages[google]
+# GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME")
+# STORAGES = {
+#     "default": {
+#         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+#     },
+#     "staticfiles": {
+#         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+#     },
+# }
+# GS_DEFAULT_ACL = "publicRead"

@@ -6,6 +6,5 @@ COPY requirements.txt /app
 RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . /app
-ENV PORT=8000
 
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 webapp.wsgi:application
