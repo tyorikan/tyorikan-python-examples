@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-_^0ocpcvya@5aube+43fs!h^j4hw+=$!4^+p+xy=+#w=z=qb$b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -86,8 +86,8 @@ DATABASES = {
     #     "PORT": os.environ.get("DB_PORT"),
     # }
     "default": {
-       "ENGINE": "django.db.backends.sqlite3",
-       "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -135,9 +135,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Use Debug=True & Run `python manage.py collectstatic`
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'members/static/'),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "members/static/"),)
 
 # Define static storage via django-storages[google]
 # GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME")

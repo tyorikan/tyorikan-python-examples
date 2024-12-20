@@ -1,11 +1,12 @@
 import os
 
 import vertexai
+import time
 from fastapi import FastAPI, Response
 from google.cloud import firestore, storage
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from pypdf import PdfReader
 from vertexai.generative_models import (
     Content,
@@ -62,10 +63,13 @@ async def gcs_event_indexer(data: Data, response: Response):
 
     try:
         # Cloud Storage からファイルを読み込む
+        start_time = time.perf_counter()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(file_name)
         tmp_file_path = f"/tmp/{file_name}"
         blob.download_to_filename(tmp_file_path)
+        end_time = time.perf_counter()
+        print("{}", end_time - start_time)
 
         collection = db.collection(COLLECTION_NAME)
 

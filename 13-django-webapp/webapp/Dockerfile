@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt /app
 RUN pip install -r requirements.txt --no-cache-dir
+ENV PORT=8000
 
 COPY . /app
 
