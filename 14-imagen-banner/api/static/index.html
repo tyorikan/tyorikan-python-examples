@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バナー生成ツール</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>バナー生成ツール</h1>
+    <form id="bannerForm">
+        <label for="product_category">商品カテゴリ:</label><br>
+        <input type="text" id="product_category" name="product_category" required><br>
+
+        <label for="user_age">年齢:</label><br>
+        <input type="number" id="user_age" name="user_age" required><br>
+
+        <label for="user_gender">性別:</label><br>
+        <select id="user_gender" name="user_gender" required>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="その他">その他</option>
+        </select><br>
+
+        <label for="aspect_ratio">アスペクト比:</label><br>
+        <select id="aspect_ratio" name="aspect_ratio">
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
+            <option value="1:1">1:1</option>
+            <option value="4:3">4:3</option>
+            <option value="3:4">3:4</option>
+        </select><br>
+
+        <button type="submit">バナーを生成</button>
+    </form>
+
+    <div id="loading">
+        <img src="loading.gif" alt="Loading...">  <!-- Replace with your loading GIF -->
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const loadingIndicator = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+        document.getElementById('bannerForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            loadingIndicator.style.display = 'block'; // Show loading indicator
+            resultDiv.innerHTML = ''; // Clear previous results
+
+            const formData = new FormData(this);
+            const data = {
+                product_category: formData.get('product_category'),
+                user_age: parseInt(formData.get('user_age')),
+                user_gender: formData.get('user_gender'),
+                aspect_ratio: formData.get('aspect_ratio')
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/generate_banner', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
+                }
+
+                const responseData = await response.json();
+                const imageBase64 = responseData.image_bytes;
+                const bannerText = responseData.banner_text;
+
+                resultDiv.innerHTML = `
+                    <p>バナーテキスト: ${bannerText}</p>
+                    <img src="data:image/png;base64,${imageBase64}" alt="生成されたバナー">
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<p>エラーが発生しました: ${error.message}</p>`;
+                console.error('Error:', error);
+            } finally {
+                loadingIndicator.style.display = 'none'; // Hide loading indicator after the request completes (success or failure)
+            }
+        });
+    </script>
+</body>
+</html>
