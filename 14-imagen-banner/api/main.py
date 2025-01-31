@@ -5,7 +5,6 @@ import textwrap
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, staticfiles
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from google.cloud import aiplatform
 from PIL import Image, ImageDraw, ImageFont
@@ -194,13 +193,6 @@ origins = [
     "http://127.0.0.1:5500",
     f"https://{os.getenv('K_SERVICE')}-{PROJECT_ID}.{REGION}.run.app",
 ]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 class BannerRequest(BaseModel):
