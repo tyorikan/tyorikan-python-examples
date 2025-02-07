@@ -128,8 +128,8 @@ def generate_product_info_with_gemini(
         image_prompt = response_dict["image_prompt"]
     except Exception as e:
         print(e)
-        product_name = "商品"  # default product name
-        image_prompt = "抽象的な背景画像"  # default prompt
+        raise ValueError(f"Invalid response format: {response_json}")
+
     return product_name, image_prompt
 
 
@@ -214,9 +214,12 @@ class BannerRequest(BaseModel):
 @app.post("/generate_banner")
 async def generate_banner(request: BannerRequest):
     # 1. Geminiによる商品名とプロンプトの生成
-    product_name, image_prompt = generate_product_info_with_gemini(
-        request.product_category, request.user_age, request.user_gender
-    )
+    try:
+        product_name, image_prompt = generate_product_info_with_gemini(
+            request.product_category, request.user_age, request.user_gender
+        )
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"detail": str(e)})
 
     # 2. 画像生成 (Imagen API)
     # generated_image = generate_image_with_imagen(image_prompt)
