@@ -9,17 +9,15 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from google.cloud import aiplatform
 from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, validator
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 from vertexai.generative_models import (
     GenerativeModel,
     HarmBlockThreshold,
     HarmCategory,
 )
 from vertexai.preview.vision_models import ImageGenerationModel
-
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-
 
 # Google Cloud Project IDとVertex AIのリージョンを設定
 PROJECT_ID = os.getenv("PROJECT_ID")
@@ -268,8 +266,6 @@ async def generate_banner(request: BannerRequest):
             c.setAuthor("Gemini")  # 作者
             c.setTitle(banner_text)  # 表題
             c.setSubject("generated-banner")  # 件名
-
-            # Draw the image
 
             # 画像をPDFに描画
             c.drawImage(
