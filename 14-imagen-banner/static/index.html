@@ -31,6 +31,12 @@
             <option value="3:4">3:4</option>
         </select><br>
 
+        <label for="output_format">出力形式:</label><br>
+        <select id="output_format" name="output_format">
+            <option value="png">PNG</option>
+            <option value="pdf">PDF</option>
+        </select><br>
+
         <button type="submit">バナーを生成</button>
     </form>
 
@@ -53,7 +59,8 @@
                 product_category: formData.get('product_category'),
                 user_age: parseInt(formData.get('user_age')),
                 user_gender: formData.get('user_gender'),
-                aspect_ratio: formData.get('aspect_ratio')
+                aspect_ratio: formData.get('aspect_ratio'),
+                output_format: formData.get('output_format')
             };
 
             try {
@@ -70,14 +77,19 @@
                     throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
                 }
 
-                const responseData = await response.json();
-                const imageBase64 = responseData.image_bytes;
-                const bannerText = responseData.banner_text;
-
-                resultDiv.innerHTML = `
-                    <p>バナーテキスト: ${bannerText}</p>
-                    <img src="data:image/png;base64,${imageBase64}" alt="生成されたバナー">
-                `;
+                if (data.output_format === 'png') {
+                    const responseData = await response.json();
+                    const imageBase64 = responseData.image_bytes;
+                    const bannerText = responseData.banner_text;
+                    resultDiv.innerHTML = `
+                        <p>バナーテキスト: ${bannerText}</p>
+                        <img src="data:image/png;base64,${imageBase64}" alt="生成されたバナー">
+                    `;
+                } else {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    resultDiv.innerHTML = `<a href="${url}" download="banner.pdf">Download PDF</a>`;
+                }
 
             } catch (error) {
                 resultDiv.innerHTML = `<p>エラーが発生しました: ${error.message}</p>`;

@@ -2,10 +2,10 @@ import base64
 import io
 import os
 import textwrap
-from typing import Literal
+from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, staticfiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from google.cloud import aiplatform
 from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, validator
@@ -16,6 +16,11 @@ from vertexai.generative_models import (
 )
 from vertexai.preview.vision_models import ImageGenerationModel
 
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+
+
 # Google Cloud Project IDとVertex AIのリージョンを設定
 PROJECT_ID = os.getenv("PROJECT_ID")
 REGION = os.getenv("REGION")
@@ -24,8 +29,7 @@ REGION = os.getenv("REGION")
 aiplatform.init(project=PROJECT_ID, location=REGION)
 
 # Vertex AIのモデル名
-MODEL_NAME = "gemini-1.5-flash-002"
-# IMAGEN_MODEL = "imagen-3.0-fast-generate-001"
+MODEL_NAME = "gemini-2.0-flash-001"
 IMAGEN_MODEL = "imagen-3.0-generate-002"
 generation_model = GenerativeModel(
     model_name=MODEL_NAME,
@@ -44,8 +48,8 @@ generation_model = GenerativeModel(
 広告コピーのトーン＆マナーは、指定された年齢や性別などに最適化してください。 
 例えば、10代女性向けであればトレンドや若者言葉を、40代男性向けであれば信頼性や実績を重視するなど、ターゲット層に合わせた言葉遣いを心がけてください。
 
-「特価」というフレーズは必ず使用し、商品の具体的なメリットや使用シーンを連想させるように配置してください。 
-例：「Google Pixel 9 Pro 特価で販売！」「Google の Pixel 9 Pro を特価で手に入れるチャンス！」
+商品の具体的なメリットや使用シーンを連想させるように配置してください。 
+例：「Google Pixel 9 Pro 特価で販売！」「Google の Pixel 9 Pro を手に入れるチャンス！」
 
 生成された広告コピーは、バナー広告に掲載されることを考慮し、視覚的なインパクトも意識してください。
  
@@ -140,8 +144,8 @@ def generate_banner_text_with_gemini(
         あなたはプロのコピーライターです。小売業者の商品を訴求する広告コピーを考えてください。
         商品名: {product_name}
         ターゲット層: 年齢{user_age}歳、性別{user_gender}
-        バナー広告に掲載するため、20字以内で「特価」というフレーズを使って魅力的な広告コピーを提案してください。
-        出力には説明などの詳細は不要です。広告コピーだけを提案してください。
+        バナー広告に掲載するため、20字以内で魅力的な広告コピーを提案してください。絵文字は使わないで。
+        出力形式はマークダウンではなくテキストで、理由や説明などの詳細は省いて、広告コピーのみを出力してください。
     """
     print("バナーテキスト作成プロンプト：", prompt)
 
@@ -187,12 +191,6 @@ def overlay_text_on_image(image: Image.Image, text: str) -> Image.Image:
 
 
 app = FastAPI()
-origins = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://127.0.0.1:5500",
-    f"https://{os.getenv('K_SERVICE')}-{PROJECT_ID}.{REGION}.run.app",
-]
 
 
 class BannerRequest(BaseModel):
@@ -202,6 +200,7 @@ class BannerRequest(BaseModel):
     aspect_ratio: Literal["1:1", "9:16", "16:9", "4:3", "3:4"] = (
         "16:9"  # Default aspect ratio
     )
+    output_format: Optional[Literal["png", "pdf"]] = "png"  # デフォルトはpng
 
     @validator("aspect_ratio")
     def validate_aspect_ratio(cls, v):
@@ -249,12 +248,58 @@ async def generate_banner(request: BannerRequest):
     image_bytes.seek(0)
 
     # 6. 画像とテキストをJSONで返す
-    return JSONResponse(
-        content={
-            "banner_text": banner_text,
-            "image_bytes": base64.b64encode(image_bytes.getvalue()).decode("utf-8"),
-        }
-    )
+    if request.output_format == "png":
+        # 6a. PNGとしてJSONで返す
+        return JSONResponse(
+            content={
+                "output_format": "png",  # output_formatをレスポンスに含める
+                "banner_text": banner_text,
+                "image_bytes": base64.b64encode(image_bytes.getvalue()).decode("utf-8"),
+            }
+        )
+    elif request.output_format == "pdf":
+        try:
+            # 6b. PDFとして返す
+            pdf_buffer = io.BytesIO()
+            c = canvas.Canvas(pdf_buffer, pagesize=letter)
+            width, height = letter
+
+            # Metadata
+            c.setAuthor("Gemini")  # 作者
+            c.setTitle(banner_text)  # 表題
+            c.setSubject("generated-banner")  # 件名
+
+            # Draw the image
+
+            # 画像をPDFに描画
+            c.drawImage(
+                ImageReader(image_bytes),
+                0,
+                0,
+                width=width,
+                height=height,
+                preserveAspectRatio=True,
+                mask="auto",
+            )  # PDFに合わせて画像をリサイズ
+
+            c.save()
+            pdf_buffer.seek(0)
+
+            return StreamingResponse(
+                pdf_buffer,
+                media_type="application/pdf",
+                headers={"Content-Disposition": "attachment;filename=banner.pdf"},
+            )
+        except Exception as e:
+            print(f"Error generating PDF: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=e,
+            )
+    else:
+        raise HTTPException(
+            status_code=400, detail="Invalid output format.  Must be 'png' or 'pdf'."
+        )
 
 
 app.mount("/", staticfiles.StaticFiles(directory="static", html=True), name="static")
