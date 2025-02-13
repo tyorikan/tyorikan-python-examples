@@ -1,43 +1,71 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>バナー広告生成ツール</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>バナー生成ツール</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        #result { display: none; } /* 初期状態で非表示 */
+    </style>
 </head>
 <body>
     <h1>バナー生成ツール</h1>
     <form id="bannerForm">
-        <label for="product_category">商品カテゴリ:</label><br>
-        <input type="text" id="product_category" name="product_category" required><br>
+        <div class="form-group">
+            <label for="product_category">商品カテゴリ:</label>
+            <input type="text" class="form-control" id="product_category" name="product_category" required>
+        </div>
+        <div class="form-group">
+            <label for="user_age">ターゲット年齢:</label>
+            <input type="number" class="form-control" id="user_age" name="user_age" required>
+        </div>
+        <div class="form-group">
+            <label for="user_gender">ターゲット性別:</label>
+            <select class="form-control" id="user_gender" name="user_gender" required>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+                <option value="other">その他</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="aspect_ratio">アスペクト比:</label>
+            <select class="form-control" id="aspect_ratio" name="aspect_ratio">
+                <option value="1:1">1:1</option>
+                <option value="9:16">9:16</option>
+                <option value="16:9" selected>16:9</option>
+                <option value="4:3">4:3</option>
+                <option value="3:4">3:4</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="output_format">出力形式:</label>
+            <select class="form-control" id="output_format" name="output_format">
+                <option value="png" selected>PNG</option>
+                <option value="pdf">PDF</option>
+            </select>
+        </div>
 
-        <label for="user_age">年齢:</label><br>
-        <input type="number" id="user_age" name="user_age" required><br>
+        <!-- 新しいレイアウトオプション -->
+        <div class="form-group">
+            <label for="text_position">テキスト位置:</label>
+            <select class="form-control" id="text_position" name="text_position">
+                <option value="top">上</option>
+                <option value="center" selected>中央</option>
+                <option value="bottom">下</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="font_size">フォントサイズ:</label>
+            <input type="number" class="form-control" id="font_size" name="font_size" value="48">
+        </div>
+        <div class="form-group">
+            <label for="text_color">テキストの色:</label>
+            <input type="color" class="form-control" id="text_color" name="text_color" value="#FFFFFF">
+        </div>
 
-        <label for="user_gender">性別:</label><br>
-        <select id="user_gender" name="user_gender" required>
-            <option value="男性">男性</option>
-            <option value="女性">女性</option>
-            <option value="その他">その他</option>
-        </select><br>
-
-        <label for="aspect_ratio">アスペクト比:</label><br>
-        <select id="aspect_ratio" name="aspect_ratio">
-            <option value="16:9">16:9</option>
-            <option value="9:16">9:16</option>
-            <option value="1:1">1:1</option>
-            <option value="4:3">4:3</option>
-            <option value="3:4">3:4</option>
-        </select><br>
-
-        <label for="output_format">出力形式:</label><br>
-        <select id="output_format" name="output_format">
-            <option value="png">PNG</option>
-            <option value="pdf">PDF</option>
-        </select><br>
-
-        <button type="submit">バナーを生成</button>
+        <button type="submit" class="btn btn-primary">生成</button>
     </form>
 
     <div id="loading">
@@ -49,9 +77,11 @@
     <script>
         const loadingIndicator = document.getElementById('loading');
         const resultDiv = document.getElementById('result');
+
         document.getElementById('bannerForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             loadingIndicator.style.display = 'block'; // Show loading indicator
+            resultDiv.style.display = 'none'; // Hide result div
             resultDiv.innerHTML = ''; // Clear previous results
 
             const formData = new FormData(this);
@@ -60,7 +90,10 @@
                 user_age: parseInt(formData.get('user_age')),
                 user_gender: formData.get('user_gender'),
                 aspect_ratio: formData.get('aspect_ratio'),
-                output_format: formData.get('output_format')
+                output_format: formData.get('output_format'),
+                text_position: formData.get('text_position'),
+                font_size: parseInt(formData.get('font_size')),
+                text_color: formData.get('text_color'),
             };
 
             try {
@@ -90,9 +123,12 @@
                     const url = URL.createObjectURL(blob);
                     resultDiv.innerHTML = `<a href="${url}" download="banner.pdf">Download PDF</a>`;
                 }
+                resultDiv.style.display = 'block'; // Show result
 
             } catch (error) {
                 resultDiv.innerHTML = `<p>エラーが発生しました: ${error.message}</p>`;
+                resultDiv.style.display = 'block'; // Show error message
+
                 console.error('Error:', error);
             } finally {
                 loadingIndicator.style.display = 'none'; // Hide loading indicator after the request completes (success or failure)

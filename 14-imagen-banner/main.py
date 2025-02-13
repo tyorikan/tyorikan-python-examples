@@ -160,24 +160,37 @@ def generate_banner_text_with_gemini(
     return response.text.strip().replace("。", "")
 
 
-def overlay_text_on_image(image: Image.Image, text: str) -> Image.Image:
+def overlay_text_on_image(
+    image: Image.Image, text: str, text_position: str, font_size: int, text_color: str
+) -> Image.Image:
     try:
-        font_path = "NotoSansJP-Bold.ttf"
-        font = ImageFont.truetype(font_path, size=48)
+        font_path = "NotoSansJP-Bold.ttf"  # フォントパスを適切に設定
+        font = ImageFont.truetype(font_path, size=font_size)
         draw = ImageDraw.Draw(image)
-        wrapped_text = textwrap.fill(text, width=20)
+        wrapped_text = textwrap.fill(text, width=20)  # テキストの折り返し
 
         # Get text bounding box
-        bbox = draw.textbbox((0, 100), wrapped_text, font=font)
+        bbox = draw.textbbox(
+            (0, 0), wrapped_text, font=font
+        )  # changed position to 0,0 to properly get the bounding box
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
 
-        # Calculate text position
-        x = (image.width - text_width) / 2
-        y = (image.height - text_height) / 2
+        # Calculate text position based on text_position parameter
+        if text_position == "top":
+            x = (image.width - text_width) / 2
+            y = 10  # 上部に配置する場合のオフセット
+        elif text_position == "center":
+            x = (image.width - text_width) / 2
+            y = (image.height - text_height) / 2
+        elif text_position == "bottom":
+            x = (image.width - text_width) / 2
+            y = image.height - text_height - 40  # 下部に配置する場合のオフセット
+        else:
+            raise ValueError("Invalid text_position value.")
 
-        # Draw text with white fill and bold effect (workaround)
-        draw.text((x, y), wrapped_text, font=font, fill="white")
+        # Draw text with specified color
+        draw.text((x, y), wrapped_text, font=font, fill=text_color)
 
         return image
     except IOError as e:
@@ -199,12 +212,30 @@ class BannerRequest(BaseModel):
         "16:9"  # Default aspect ratio
     )
     output_format: Optional[Literal["png", "pdf"]] = "png"  # デフォルトはpng
+    text_position: Literal["top", "center", "bottom"] = "center"
+    font_size: int = 48
+    text_color: str = "white"
 
     @validator("aspect_ratio")
     def validate_aspect_ratio(cls, v):
         allowed_ratios = ["1:1", "9:16", "16:9", "4:3", "3:4"]
         if v not in allowed_ratios:
             raise ValueError(f"Invalid aspect ratio. Must be one of: {allowed_ratios}")
+        return v
+
+    @validator("font_size")
+    def validate_font_size(cls, v):
+        if not (12 <= v <= 120):  # 例: 12ptから120ptの範囲に制限
+            raise ValueError("Font size must be between 12 and 120.")
+        return v
+
+    @validator("text_color")
+    def validate_text_color(cls, v):
+        # 簡単なバリデーション: '#' から始まる6桁の16進数カラーコードを想定
+        if not (v.startswith("#") and len(v) == 7):
+            raise ValueError(
+                "Invalid color format. Must be a hex code (e.g., '#FFFFFF')."
+            )
         return v
 
 
@@ -238,7 +269,13 @@ async def generate_banner(request: BannerRequest):
     )
 
     # 4. 画像とテキストの合成 (Pillow)
-    output_image = overlay_text_on_image(generated_image, banner_text)
+    output_image = overlay_text_on_image(
+        generated_image,
+        banner_text,
+        request.text_position,
+        request.font_size,
+        request.text_color,
+    )
 
     # 5. 画像を保存 (またはメモリ上で扱う)
     image_bytes = io.BytesIO()
