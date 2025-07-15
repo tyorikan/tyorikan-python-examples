@@ -23,6 +23,7 @@ h1 {
 
 .input-group {
     display: flex;
+    gap: 0;
     margin-bottom: 1.5rem;
 }
 
@@ -40,13 +41,28 @@ h1 {
     background-color: #5c67f2;
     color: white;
     cursor: pointer;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
     font-size: 1rem;
     transition: background-color 0.3s;
 }
 
 #summarize-btn:hover {
     background-color: #4a54e1;
+}
+
+#summarize-audio-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    border-radius: 0 4px 4px 0;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+#summarize-audio-btn:hover {
+    background-color: #218838;
 }
 
 #result {
@@ -84,6 +100,25 @@ h1 {
     border: 1px solid #eee;
     border-radius: 4px;
     margin-bottom: 0.5rem;
+}
+
+.audio-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    margin-top: 1rem;
+}
+
+.audio-section h3 {
+    margin-top: 0;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.audio-section audio {
+    width: 100%;
+    margin-top: 0.5rem;
 }
 
 .loader {
