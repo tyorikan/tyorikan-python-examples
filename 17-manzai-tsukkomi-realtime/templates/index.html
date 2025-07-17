@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 漫才ツッコミ リアルタイム Web アプリ</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <i class="fas fa-theater-masks"></i>
+                    漫才ツッコミ リアルタイム Web アプリ
+                </h1>
+                <p class="subtitle">関西弁AIが瞬時にツッコミを入れます！</p>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                <i class="fas fa-circle status-indicator" id="statusIndicator"></i>
+                <span id="statusText">接続中...</span>
+            </div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <!-- 音声入力セクション -->
+            <section class="audio-section">
+                <div class="audio-controls">
+                    <button id="recordButton" class="record-button" disabled>
+                        <i class="fas fa-microphone-slash"></i>
+                        <span class="button-text">マイク権限を確認中...</span>
+                    </button>
+                    <div class="audio-visualizer" id="audioVisualizer">
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                    </div>
+                </div>
+                <p class="audio-hint" id="audioHint">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="hintText">マイクの使用許可をお待ちしています...</span>
+                </p>
+            </section>
+
+            <!-- テキスト入力セクション（テスト用） -->
+            <section class="text-section">
+                <div class="text-input-container">
+                    <input type="text" id="textInput" placeholder="テスト用: ここにテキストを入力してツッコミを試してみてください..." maxlength="200">
+                    <button id="sendTextButton" class="send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 会話履歴 -->
+            <section class="conversation-section">
+                <h2 class="section-title">
+                    <i class="fas fa-comments"></i>
+                    会話履歴
+                </h2>
+                <div class="conversation-container" id="conversationContainer">
+                    <div class="welcome-message">
+                        <i class="fas fa-robot"></i>
+                        <p>こんにちは！関西弁AIです。何か面白い話をしてみてください！</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- フッター -->
+        <footer class="footer">
+            <div class="stats" id="stats">
+                <span><i class="fas fa-users"></i> 接続数: <span id="connectionCount">-</span></span>
+                <span><i class="fas fa-comments"></i> 処理回数: <span id="requestCount">-</span></span>
+            </div>
+            <p class="footer-text">
+                Powered by <strong>genai-processors</strong> & <strong>Google Gemini</strong>
+            </p>
+        </footer>
+    </div>
+
+    <!-- 音声再生用の隠し要素 -->
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <!-- JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
