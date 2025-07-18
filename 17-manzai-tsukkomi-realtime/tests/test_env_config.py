@@ -4,10 +4,10 @@
 """
 
 import os
-import sys
 
-from config import AppConfig, TsukkomiPrompts
 from dotenv import load_dotenv
+
+from src.config import AppConfig, TsukkomiPrompts
 
 
 def test_env_loading():
@@ -75,7 +75,7 @@ def test_env_loading():
     validation_status = "✅ 有効" if is_valid else "❌ 無効"
     print(f"  設定状態: {validation_status}")
 
-    return is_valid
+    assert is_valid
 
 
 def test_env_override():
@@ -118,8 +118,7 @@ def test_env_override():
             and test_config.voice.speaking_rate == 0.9
         )
 
-        result = "✅ 成功" if success else "❌ 失敗"
-        print(f"  上書きテスト: {result}")
+        assert success
 
     finally:
         # 元の値を復元
@@ -165,29 +164,4 @@ def show_env_examples():
             print(f"export {key}='{value}'")
 
 
-def main():
-    """メイン関数"""
-    print("🎭 漫才ツッコミアプリ - 環境変数設定テスト")
-    print("=" * 60)
 
-    # 基本テスト
-    is_valid = test_env_loading()
-
-    # 上書きテスト
-    test_env_override()
-
-    # 設定例表示
-    show_env_examples()
-
-    print("\n🎉 テスト完了!")
-
-    if not is_valid:
-        print("⚠️ GOOGLE_API_KEY を設定してからアプリを起動してください")
-        print("例: export GOOGLE_API_KEY='your-actual-api-key'")
-        sys.exit(1)
-    else:
-        print("✅ 設定は有効です。アプリを起動できます！")
-
-
-if __name__ == "__main__":
-    main()

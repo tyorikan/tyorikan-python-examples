@@ -37,4 +37,4 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Web アプリケーション起動
-CMD ["python", "app.py"]
+CMD ["python", "src/app.py"]

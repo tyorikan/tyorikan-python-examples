@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from genai_integration import GenAIIntegration, ProcessorResponse
+from src.genai_integration import GenAIIntegration, ProcessorResponse
 
 
 class TestGenAIIntegration(unittest.TestCase):
@@ -16,9 +16,9 @@ class TestGenAIIntegration(unittest.TestCase):
         self.system_prompt = "test_system_prompt"
         # Use asyncio.run() for cleaner async test execution
 
-    @patch('genai_integration.texttospeech.TextToSpeechClient')
-    @patch('genai_integration.genai_model.GenaiModel')
-    @patch('genai_integration.realtime.LiveModelProcessor')
+    @patch('src.genai_integration.texttospeech.TextToSpeechClient')
+    @patch('src.genai_integration.genai_model.GenaiModel')
+    @patch('src.genai_integration.realtime.LiveModelProcessor')
     def test_initialize_success(self, mock_live_processor, mock_genai_model, mock_tts_client):
         """initializeメソッドが正常に完了するかのテスト"""
         # --- Mock Setup ---
@@ -38,8 +38,8 @@ class TestGenAIIntegration(unittest.TestCase):
         mock_genai_model.assert_called_once()
         mock_live_processor.assert_called_once()
 
-    @patch('genai_integration.GenAIIntegration._synthesize_speech', new_callable=AsyncMock)
-    @patch('genai_integration.GenAIIntegration._clean_response_text')
+    @patch('src.genai_integration.GenAIIntegration._synthesize_speech', new_callable=AsyncMock)
+    @patch('src.genai_integration.GenAIIntegration._clean_response_text')
     def test_process_text_success(self, mock_clean_text, mock_synthesize_speech):
         """process_textメソッドが正常に動作するかのテスト"""
         # --- Mock Setup ---
