@@ -1,0 +1,13 @@
+[project]
+name = "ai-agents-adk"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-adk>=1.8.0",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.27",
+    "wikipedia>=1.4.0",
+    "requests>=2.32.4",
+]
