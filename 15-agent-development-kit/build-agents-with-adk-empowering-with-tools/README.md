@@ -22,12 +22,9 @@
 ```mermaid
 graph TD
     A[User] --> B(root_agent: 司令塔);
-    B -->|リアルタイムな質問
-(天気, ニュースなど)| C{google_search_agent: 最新情報担当};
-    B -->|知識ベースの質問
-(歴史, 文化など)| D{langchain_wikipedia_tool: 歴史・文化研究者};
-    B -->|特定の計算
-(為替レートなど)| E[get_fx_rate 関数: 金融アナリスト];
+    B -->|"リアルタイムな質問 (天気, ニュースなど)"| C{google_search_agent: 最新情報担当};
+    B -->|"知識ベースの質問 (歴史, 文化など)"| D{langchain_wikipedia_tool: 歴史・文化研究者};
+    B -->|"特定の計算 (為替レートなど)"| E[get_fx_rate 関数: 金融アナリスト];
 ```
 
 ## 登場する専門家たち（コンポーネント解説）
