@@ -1,11 +1,6 @@
 from fastapi import FastAPI
+from routers import root
 
 app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-@app.post("/")
-def write_root():
-    return {"Hello": "World"}
+app.include_router(root.router)
