@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 class Message(BaseModel):
-    Hello: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    hello: str = Field(alias="Hello")
