@@ -61,7 +61,7 @@ MODEL_NAME="gemini-2.5-pro"
 
 ```bash
 # Dockerイメージをビルドしてコンテナを起動
-docker-compose up --build
+docker compose up --build
 ```
 
 アプリケーションは `http://localhost:8080` でリクエストを待ち受けます。
@@ -77,7 +77,7 @@ docker-compose up --build
 
 ```bash
 # 開発用の依存関係を含むすべてのパッケージをインストール
-uv pip install -e . --group dev
+uv pip install -e '.[dev]'
 ```
 
 ### 2. テストの実行

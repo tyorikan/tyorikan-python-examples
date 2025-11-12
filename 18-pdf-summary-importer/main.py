@@ -10,10 +10,18 @@ from google.genai.types import Part
 
 # --- 設定値 ---
 PROJECT_ID = os.getenv("PROJECT_ID")
+if not PROJECT_ID:
+    raise ValueError("環境変数 'PROJECT_ID' が設定されていません。")
 LOCATION = os.getenv("LOCATION", "us-central1")
 SPANNER_INSTANCE_ID = os.getenv("SPANNER_INSTANCE_ID")
+if not SPANNER_INSTANCE_ID:
+    raise ValueError("環境変数 'SPANNER_INSTANCE_ID' が設定されていません。")
 SPANNER_DATABASE_ID = os.getenv("SPANNER_DATABASE_ID")
+if not SPANNER_DATABASE_ID:
+    raise ValueError("環境変数 'SPANNER_DATABASE_ID' が設定されていません。")
 SPANNER_TABLE_NAME = os.getenv("SPANNER_TABLE_NAME")
+if not SPANNER_TABLE_NAME:
+    raise ValueError("環境変数 'SPANNER_TABLE_NAME' が設定されていません。")
 
 # 想定される Spanner テーブルスキーマ:
 # CREATE TABLE DocumentSummaries (
@@ -35,7 +43,8 @@ async def process_storage_event(request: Request):
     """
     EventarcからCloud Storageイベントを受け取り、PDF要約処理を実行します。
     """
-    print("[FastAPI] イベント受信")
+    import logging
+    logging.info("[FastAPI] イベント受信")
 
     # CloudEvents形式のJSONペイロードを取得
     event = await request.json()
@@ -69,8 +78,11 @@ async def process_storage_event(request: Request):
 
     except Exception as e:
         print(f"[Error] 処理中にエラーが発生しました: {e}")
+        # 必要であれば、ここでスタックトレースをログに出力します
+        # import traceback
+        # traceback.print_exc()
         raise HTTPException(
-            status_code=500, detail=f"サーバー内部でエラーが発生しました: {e}"
+            status_code=500, detail="サーバー内部でエラーが発生しました。"
         )
 
 

@@ -10,8 +10,8 @@ dependencies = [
     "uvicorn[standard]>=0.38.0",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[project.optional-dependencies]
+dev = [
     "pytest>=9.0.0",
     "httpx>=0.28.1",
 ]
