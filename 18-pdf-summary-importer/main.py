@@ -132,7 +132,6 @@ async def generate_summary_from_gcs(gcs_uri: str) -> str:
             prompt,
         ],
     )
-    print(response)
 
     return response.text if response.text is not None else ""
 

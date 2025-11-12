@@ -1,15 +1,8 @@
 # `main` をインポートする前に環境変数を設定
-import os
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-
-# os.environ["PROJECT_ID"] = "test-project"
-# os.environ["SPANNER_INSTANCE_ID"] = "test-instance"
-# os.environ["SPANNER_DATABASE_ID"] = "test-database"
-# os.environ["SPANNER_TABLE_NAME"] = "test-table"
-# os.environ["MODEL_NAME"] = "test-model"
 from main import app
 
 client = TestClient(app)
@@ -42,7 +35,7 @@ def mock_save_to_spanner():
 def test_process_storage_event_success(mock_generate_summary, mock_save_to_spanner):
     """正常なEventarcイベントを受信した場合のテスト"""
     # Given: Eventarcからの正常なリクエストボディ
-    event_data = {"bucket": "test-bucket", "name": "path/to/test-file.pdf"}
+    event_data = {"data": {"bucket": "test-bucket", "name": "path/to/test-file.pdf"}}
 
     # When: エンドポイントにPOSTリクエストを送信
     response = client.post("/", json=event_data)
@@ -71,7 +64,7 @@ def test_process_storage_event_missing_payload():
 def test_process_storage_event_missing_key():
     """リクエストボディのキーが不足している場合のテスト"""
     # Given: 'name' キーが不足しているリクエストボディ
-    event_data = {"bucket": "test-bucket"}
+    event_data = {"data": {"bucket": "test-bucket"}}
 
     # When: エンドポイントにPOSTリクエストを送信
     response = client.post("/", json=event_data)
@@ -84,7 +77,7 @@ def test_process_storage_event_summary_generation_fails(mock_generate_summary):
     """要約生成で例外が発生した場合のテスト"""
     # Given: `generate_summary_from_gcs` が例外を発生させる
     mock_generate_summary.side_effect = Exception("Gemini API error")
-    event_data = {"bucket": "test-bucket", "name": "path/to/test-file.pdf"}
+    event_data = {"data": {"bucket": "test-bucket", "name": "path/to/test-file.pdf"}}
 
     # When: エンドポイントにPOSTリクエストを送信
     response = client.post("/", json=event_data)
@@ -100,7 +93,7 @@ def test_process_storage_event_spanner_save_fails(
     """Spannerへの保存で例外が発生した場合のテスト"""
     # Given: `save_to_spanner` が例外を発生させる
     mock_save_to_spanner.side_effect = Exception("Spanner connection error")
-    event_data = {"bucket": "test-bucket", "name": "path/to/test-file.pdf"}
+    event_data = {"data": {"bucket": "test-bucket", "name": "path/to/test-file.pdf"}}
 
     # When: エンドポイントにPOSTリクエストを送信
     response = client.post("/", json=event_data)
