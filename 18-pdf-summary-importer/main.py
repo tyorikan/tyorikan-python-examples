@@ -2,11 +2,14 @@ import datetime
 import os
 import uuid
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.concurrency import run_in_threadpool
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from google import genai
 from google.cloud import spanner
 from google.genai.types import Part
+from pydantic import BaseModel
 
 # --- 設定値 ---
 PROJECT_ID = os.getenv("PROJECT_ID")
@@ -47,24 +50,30 @@ instance = spanner_client.instance(SPANNER_INSTANCE_ID)
 app = FastAPI()
 
 
+# RequestValidationErrorを捕捉し、400 Bad Requestを返す例外ハンドラ
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
+
+
+class StorageEvent(BaseModel):
+    bucket: str
+    name: str
+
+
 @app.post("/")
-async def process_storage_event(request: Request):
+async def process_storage_event(event: StorageEvent):
     """
     EventarcからCloud Storageイベントを受け取り、PDF要約処理を実行します。
     """
-    # CloudEvents形式のJSONペイロードを取得
-    event = await request.json()
-    if not event or "bucket" not in event or "name" not in event:
-        raise HTTPException(
-            status_code=400,
-            detail="リクエストのJSONペイロードに 'bucket' または 'name' キーが含まれていません。",
-        )
-
     # GCSのオブジェクト情報を取得
-    bucket = event["bucket"]
-    name = event["name"]
+    bucket = event.bucket
+    name = event.name
     gcs_uri = f"gs://{bucket}/{name}"
-    file_name = name.split("/")[-1]
+    file_name = os.path.basename(name)
     print(f"[Event] 対象ファイル: {gcs_uri}")
 
     try:
@@ -76,7 +85,7 @@ async def process_storage_event(request: Request):
         print("-" * 40)
 
         # 2. Spanner に保存
-        save_to_spanner(file_name, gcs_uri, summary_text)
+        await run_in_threadpool(save_to_spanner, file_name, gcs_uri, summary_text)
 
         return JSONResponse(
             content={"message": "処理が正常に完了しました。"}, status_code=200

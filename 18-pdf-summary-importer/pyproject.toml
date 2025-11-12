@@ -2,7 +2,7 @@
 name = "18-pdf-summary-importer"
 version = "0.1.0"
 description = "A script to summarize PDF files from GCS and save the summary to Spanner."
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "google-cloud-spanner>=3.59.0",
     "google-genai>=1.49.0",

@@ -5,12 +5,11 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ["PROJECT_ID"] = "test-project"
-os.environ["SPANNER_INSTANCE_ID"] = "test-instance"
-os.environ["SPANNER_DATABASE_ID"] = "test-database"
-os.environ["SPANNER_TABLE_NAME"] = "test-table"
-os.environ["MODEL_NAME"] = "test-model"
-
+# os.environ["PROJECT_ID"] = "test-project"
+# os.environ["SPANNER_INSTANCE_ID"] = "test-instance"
+# os.environ["SPANNER_DATABASE_ID"] = "test-database"
+# os.environ["SPANNER_TABLE_NAME"] = "test-table"
+# os.environ["MODEL_NAME"] = "test-model"
 from main import app
 
 client = TestClient(app)
@@ -67,10 +66,6 @@ def test_process_storage_event_missing_payload():
 
     # Then: 400エラーが返されることを確認
     assert response.status_code == 400
-    assert (
-        "リクエストのJSONペイロードに 'bucket' または 'name' キーが含まれていません。"
-        in response.json()["detail"]
-    )
 
 
 def test_process_storage_event_missing_key():
@@ -83,10 +78,6 @@ def test_process_storage_event_missing_key():
 
     # Then: 400エラーが返されることを確認
     assert response.status_code == 400
-    assert (
-        "リクエストのJSONペイロードに 'bucket' または 'name' キーが含まれていません。"
-        in response.json()["detail"]
-    )
 
 
 def test_process_storage_event_summary_generation_fails(mock_generate_summary):
@@ -100,10 +91,7 @@ def test_process_storage_event_summary_generation_fails(mock_generate_summary):
 
     # Then: 500エラーが返されることを確認
     assert response.status_code == 500
-    assert (
-        "サーバー内部でエラーが発生しました。"
-        in response.json()["detail"]
-    )
+    assert "サーバー内部でエラーが発生しました。" in response.json()["detail"]
 
 
 def test_process_storage_event_spanner_save_fails(
@@ -119,7 +107,4 @@ def test_process_storage_event_spanner_save_fails(
 
     # Then: 500エラーが返されることを確認
     assert response.status_code == 500
-    assert (
-        "サーバー内部でエラーが発生しました。"
-        in response.json()["detail"]
-    )
+    assert "サーバー内部でエラーが発生しました。" in response.json()["detail"]
