@@ -16,6 +16,15 @@ from main import app
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def set_env_vars(monkeypatch):
+    monkeypatch.setenv("PROJECT_ID", "test-project")
+    monkeypatch.setenv("SPANNER_INSTANCE_ID", "test-instance")
+    monkeypatch.setenv("SPANNER_DATABASE_ID", "test-database")
+    monkeypatch.setenv("SPANNER_TABLE_NAME", "test-table")
+    monkeypatch.setenv("MODEL_NAME", "test-model")
+
+
 @pytest.fixture
 def mock_generate_summary():
     """`generate_summary_from_gcs`関数をモック化するフィクスチャ"""
@@ -92,7 +101,7 @@ def test_process_storage_event_summary_generation_fails(mock_generate_summary):
     # Then: 500エラーが返されることを確認
     assert response.status_code == 500
     assert (
-        "サーバー内部でエラーが発生しました: Gemini API error"
+        "サーバー内部でエラーが発生しました。"
         in response.json()["detail"]
     )
 
@@ -111,6 +120,6 @@ def test_process_storage_event_spanner_save_fails(
     # Then: 500エラーが返されることを確認
     assert response.status_code == 500
     assert (
-        "サーバー内部でエラーが発生しました: Spanner connection error"
+        "サーバー内部でエラーが発生しました。"
         in response.json()["detail"]
     )

@@ -34,6 +34,15 @@ if not SPANNER_TABLE_NAME:
 
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.5-pro")
 
+# Geminiクライアントの初期化
+genai_client = genai.Client(
+    vertexai=True,
+    project=PROJECT_ID,
+    location=LOCATION,
+)
+
+spanner_client = spanner.Client(project=PROJECT_ID)
+instance = spanner_client.instance(SPANNER_INSTANCE_ID)
 
 app = FastAPI()
 
@@ -43,9 +52,6 @@ async def process_storage_event(request: Request):
     """
     EventarcからCloud Storageイベントを受け取り、PDF要約処理を実行します。
     """
-    import logging
-    logging.info("[FastAPI] イベント受信")
-
     # CloudEvents形式のJSONペイロードを取得
     event = await request.json()
     if not event or "bucket" not in event or "name" not in event:
@@ -63,7 +69,7 @@ async def process_storage_event(request: Request):
 
     try:
         # 1. Gemini で要約生成
-        summary_text = generate_summary_from_gcs(gcs_uri)
+        summary_text = await generate_summary_from_gcs(gcs_uri)
 
         print("-" * 40)
         print(f"【要約結果】\n{summary_text[:200]}...\n(省略)")
@@ -86,18 +92,11 @@ async def process_storage_event(request: Request):
         )
 
 
-def generate_summary_from_gcs(gcs_uri: str) -> str:
+async def generate_summary_from_gcs(gcs_uri: str) -> str:
     """
     GCS上のPDFファイルをGeminiに読み込ませ、詳細な要約を生成します。
     """
     print(f"[Gemini] GCSファイルを参照中: {gcs_uri}")
-
-    # Geminiクライアントの初期化
-    genai_client = genai.Client(
-        vertexai=True,
-        project=PROJECT_ID,
-        location=LOCATION,
-    )
 
     prompt = """
     あなたは優秀なドキュメントアナリストです。
@@ -110,7 +109,7 @@ def generate_summary_from_gcs(gcs_uri: str) -> str:
     - 日本語で出力すること。
     """
 
-    response = genai_client.models.generate_content(
+    response = await genai_client.aio.models.generate_content(
         model=f"projects/{PROJECT_ID}/locations/{LOCATION}/models/{MODEL_NAME}",
         contents=[
             Part.from_uri(
@@ -130,9 +129,6 @@ def save_to_spanner(file_name: str, gcs_uri: str, summary: str):
     要約結果とファイル情報をCloud Spannerに保存します。
     """
     print(f"[Spanner] データベースへ保存中: {file_name}")
-
-    spanner_client = spanner.Client(project=PROJECT_ID)
-    instance = spanner_client.instance(SPANNER_INSTANCE_ID)
     database = instance.database(SPANNER_DATABASE_ID)
 
     def insert_summary(transaction):
