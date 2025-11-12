@@ -59,19 +59,23 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-class StorageEvent(BaseModel):
+class StorageObjectData(BaseModel):
     bucket: str
     name: str
 
 
+class CloudEvent(BaseModel):
+    data: StorageObjectData
+
+
 @app.post("/")
-async def process_storage_event(event: StorageEvent):
+async def process_storage_event(event: CloudEvent):
     """
     EventarcからCloud Storageイベントを受け取り、PDF要約処理を実行します。
     """
     # GCSのオブジェクト情報を取得
-    bucket = event.bucket
-    name = event.name
+    bucket = event.data.bucket
+    name = event.data.name
     gcs_uri = f"gs://{bucket}/{name}"
     file_name = os.path.basename(name)
     print(f"[Event] 対象ファイル: {gcs_uri}")
