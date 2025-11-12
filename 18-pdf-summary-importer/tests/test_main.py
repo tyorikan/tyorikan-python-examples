@@ -1,20 +1,18 @@
 # `main` をインポートする前に環境変数を設定
+import os
 from unittest.mock import patch
+
+os.environ["PROJECT_ID"] = "test-project"
+os.environ["SPANNER_INSTANCE_ID"] = "test-instance"
+os.environ["SPANNER_DATABASE_ID"] = "test-database"
+os.environ["SPANNER_TABLE_NAME"] = "test-table"
+os.environ["MODEL_NAME"] = "test-model"
 
 import pytest
 from fastapi.testclient import TestClient
 from main import app
 
 client = TestClient(app)
-
-
-@pytest.fixture(autouse=True)
-def set_env_vars(monkeypatch):
-    monkeypatch.setenv("PROJECT_ID", "test-project")
-    monkeypatch.setenv("SPANNER_INSTANCE_ID", "test-instance")
-    monkeypatch.setenv("SPANNER_DATABASE_ID", "test-database")
-    monkeypatch.setenv("SPANNER_TABLE_NAME", "test-table")
-    monkeypatch.setenv("MODEL_NAME", "test-model")
 
 
 @pytest.fixture
