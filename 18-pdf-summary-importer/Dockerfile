@@ -1,5 +1,5 @@
 # 1. ベースイメージの指定
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # 2. 環境変数の設定
 # PORTはCloud Runによって提供される
