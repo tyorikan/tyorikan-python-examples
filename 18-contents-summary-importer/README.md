@@ -1,22 +1,24 @@
-# PDF要約&インポート サービス
+# ドキュメント要約&インポート サービス
 
-このプロジェクトは、Google Cloud Storage (GCS) にアップロードされたPDFファイルをトリガーとして、Gemini API を利用して内容を要約し、その結果を Cloud Spanner に保存する FastAPI アプリケーションです。
+このプロジェクトは、Google Cloud Storage (GCS) にアップロードされたPDFやePubファイルをトリガーとして、Gemini API を利用して内容を要約し、その結果を Cloud Spanner に保存する FastAPI アプリケーションです。
 Eventarc を経由して GCS のイベントを Cloud Run 上のこのサービスに送信することを想定しています。
 
 ## 主な機能
 
--   **PDF要約**: Gemini API (gemini-2.5-pro) を使用して、PDFファイルの詳細な要約を生成します。
--   **データベース保存**: 生成した要約、ファイル名、GCS URI などの情報を Cloud Spanner に保存します。
+-   **ドキュメント要約**: Gemini API を使用して、PDFやePubファイルの詳細な要約を生成します。
+-   **ePubファイルの分解**: ePubファイルを構成するXHTMLや画像ファイルに分解し、それぞれをGCSに保存します。
+-   **データベース保存**: 生成した要約、ファイル名、GCS URI、分解したファイルのGCSパスなどの情報を Cloud Spanner に保存します。
 -   **イベント駆動**: GCS へのファイルアップロードを Eventarc で検知し、非同期に処理を実行します。
 
 ## アーキテクチャ概要
 
-1.  ユーザーが GCS バケットに PDF ファイルをアップロードします。
+1.  ユーザーが GCS バケットに PDF または ePub ファイルをアップロードします。
 2.  Eventarc が `google.cloud.storage.object.v1.finalized` イベントを検知します。
 3.  Eventarc は、Cloud Run でホストされているこの FastAPI アプリケーションのエンドポイントに、CloudEvents 形式でリクエストを送信します。
-4.  FastAPI アプリケーションはリクエストを受け取り、PDF の GCS URI を取得します。
-5.  Gemini API を呼び出し、PDF の内容を要約します。
-6.  要約結果と関連情報を Cloud Spanner の `DocumentSummaries` テーブルに書き込みます。
+4.  FastAPI アプリケーションはリクエストを受け取り、アップロードされたファイルのGCS URIを取得します。
+5.  ファイルがePub形式の場合、XHTMLや画像などのコンテンツに分解し、それぞれを別のGCSパスに保存します。
+6.  Gemini API を呼び出し、ドキュメントの内容を要約します。
+7.  要約結果と関連情報（ePubの場合は分解したファイルのGCSパスも含む）を Cloud Spanner の `DocumentSummaries` テーブルに書き込みます。
 
 ## API仕様
 
