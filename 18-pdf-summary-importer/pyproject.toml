@@ -8,13 +8,19 @@ dependencies = [
     "google-genai>=1.49.0",
     "fastapi>=0.121.1",
     "uvicorn[standard]>=0.38.0",
+    "ebooklib>=0.20",
+    "beautifulsoup4>=4.14.2",
+    "google-cloud-storage>=3.5.0",
+    "python-dateutil>=2.9.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=9.0.0",
+    "pytest-asyncio>=0.21.0",
     "httpx>=0.28.1",
 ]
 
 [tool.uv.sources.pypi]
 url = "https://pypi.org/simple"
+
