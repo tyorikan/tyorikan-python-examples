@@ -1,0 +1,8 @@
+.git
+.gitignore
+.env
+tests/
+*.pyc
+__pycache__/
+compose.yaml
+.venv
