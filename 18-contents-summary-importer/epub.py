@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import os
@@ -52,19 +53,59 @@ def upload_blob(
     return f"gs://{bucket_name}/{destination_blob_name}"
 
 
+def _parse_best_effort_date(date_str: str) -> datetime.datetime | None:
+    """さまざまな形式の日付文字列を解釈し、datetimeオブジェクトを返す試みを行う"""
+    if not date_str:
+        return None
+
+    # 一般的なフォーマットを優先的に試す
+    common_formats = [
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+    ]
+    for fmt in common_formats:
+        try:
+            return datetime.datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+
+    # YYYY-MM 形式のパース
+    try:
+        return datetime.datetime.strptime(date_str, "%Y-%m")
+    except ValueError:
+        pass
+
+    # YYYY 形式のパース
+    try:
+        return datetime.datetime.strptime(date_str, "%Y")
+    except ValueError:
+        pass
+
+    # dateutil.parserによる最終試行
+    from dateutil import parser
+
+    try:
+        return parser.parse(date_str)
+    except (parser.ParserError, TypeError):
+        print(f"[EPUB] 日付のパースに失敗: {date_str}")
+        return None
+
+
 def parse_epub(
     file_path: str, upload_bucket_name: str, original_file_name: str
-) -> tuple[dict, str, list[str]]:
+) -> tuple[dict, list[str], list[str]]:
     """
-    EPUBファイルを解析し、メタデータ、テキストコンテンツ、画像GCSパスのリストを返す
+    EPUBファイルを解析し、メタデータ、HTMLチャンクのGCSパスリスト、画像GCSパスのリストを返す
 
     Args:
         file_path (str): 解析するEPUBファイルのローカルパス
-        upload_bucket_name (str): 画像のアップロード先GCSバケット名
+        upload_bucket_name (str): 画像やHTMLのアップロード先GCSバケット名
         original_file_name (str): 元のファイル名（アップロードパスに使用）
 
     Returns:
-        tuple[dict, str, list[str]]: (メタデータ辞書, テキストコンテンツ, 画像GCSパスのリスト)
+        tuple[dict, list[str], list[str]]: (メタデータ辞書, HTMLチャンクGCSパスリスト, 画像GCSパスのリスト)
     """
     print(f"[EPUB] 解析開始: {file_path}")
     book = epub.read_epub(file_path)
@@ -93,14 +134,7 @@ def parse_epub(
 
         dates = book.get_metadata(dc_namespace, "date")
         if dates:
-            # TODO: 日付形式のパースをより堅牢にする
-            # 例: '2023-01-01T00:00:00Z'
-            from dateutil import parser
-
-            try:
-                metadata["published_date"] = parser.parse(dates[0][0])
-            except (parser.ParserError, TypeError):
-                metadata["published_date"] = None
+            metadata["published_date"] = _parse_best_effort_date(dates[0][0])
 
     except Exception as e:
         print(f"[EPUB] メタデータ抽出中にエラー: {e}")
@@ -135,27 +169,41 @@ def parse_epub(
 
     print(f"[EPUB] {len(image_gcs_paths)}個の画像をGCSにアップロードしました。")
 
-    # --- 3. テキストの抽出と画像パスの置換 ---
-    content_html = []
+    # --- 3. HTMLチャンクの抽出、画像パス置換、GCSへのアップロード ---
+    html_gcs_paths = []
     items = book.get_items_of_type(ebooklib.ITEM_DOCUMENT)
-    for item in items:
-        soup = BeautifulSoup(item.get_content(), "html.parser")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for i, item in enumerate(items):
+            try:
+                soup = BeautifulSoup(item.get_content(), "html.parser")
 
-        # 画像パスをGCSパスに置換
-        for img_tag in soup.find_all("img"):
-            original_src = img_tag.get("src")
-            if original_src and original_src in image_paths_map:
-                img_tag["src"] = image_paths_map[original_src]
-                print(
-                    f"[EPUB] 画像パスを置換: {original_src} -> {image_paths_map[original_src]}"
+                # 画像パスをGCSパスに置換
+                for img_tag in soup.find_all("img"):
+                    original_src = img_tag.get("src")
+                    if original_src and original_src in image_paths_map:
+                        img_tag["src"] = image_paths_map[original_src]
+                        print(
+                            f"[EPUB] 画像パスを置換: {original_src} -> {image_paths_map[original_src]}"
+                        )
+
+                # 変更されたHTMLを一時ファイルに保存
+                temp_html_path = os.path.join(temp_dir, f"chunk_{i}.html")
+                with open(temp_html_path, "w", encoding="utf-8") as f:
+                    f.write(soup.prettify())
+
+                # HTMLチャンクをGCSにアップロード
+                html_gcs_path = upload_blob(
+                    bucket_name=upload_bucket_name,
+                    source_file_name=temp_html_path,
+                    destination_blob_name=f"html_chunks/{original_file_name}/{os.path.basename(item.get_name())}",
                 )
+                html_gcs_paths.append(html_gcs_path)
+            except Exception as e:
+                print(f"[EPUB] HTMLチャンク処理中にエラー: {e}")
 
-        content_html.append(soup.prettify())
+    print(f"[EPUB] {len(html_gcs_paths)}個のHTMLチャンクをGCSにアップロードしました。")
 
-    full_content = "\n".join(content_html)
-    print(f"[EPUB] テキストコンテンツ抽出完了（{len(full_content)}文字）")
-
-    return metadata, full_content, image_gcs_paths
+    return metadata, html_gcs_paths, image_gcs_paths
 
 
 async def handle_epub(
@@ -172,13 +220,13 @@ async def handle_epub(
 
         # 2. EPUBを解析 (画像のGCSアップロードも含む)
         upload_bucket_id = get_upload_bucket_id()
-        metadata, content, image_gcs_paths = await run_in_threadpool(
+        metadata, html_gcs_paths, image_gcs_paths = await run_in_threadpool(
             parse_epub, temp_epub_path, upload_bucket_id, file_name
         )
 
         # 3. EPUBコンテンツを要約
-        summary_text = await generate_summary_from_epub_content(
-            content, image_gcs_paths
+        summary_text = await generate_summary_from_html_chunks(
+            html_gcs_paths, image_gcs_paths
         )
         print("-" * 40)
         print(f"【EPUB要約結果】\n{summary_text[:200]}...\n(省略)")
@@ -190,7 +238,7 @@ async def handle_epub(
             file_name,
             gcs_uri,
             metadata,
-            content,
+            html_gcs_paths,
             image_gcs_paths,
             summary_text,
         )
@@ -201,22 +249,67 @@ async def handle_epub(
             print(f"[EPUB] 一時ファイルを削除: {temp_epub_path}")
 
 
-async def generate_summary_from_epub_content(
-    content: str, image_gcs_paths: list[str]
+async def generate_summary_from_html_chunks(
+    html_gcs_paths: list[str], image_gcs_paths: list[str]
 ) -> str:
-    """EPUBのHTMLコンテンツをGeminiに読み込ませ、画像参照を含む要約を生成します。"""
+    """HTMLチャンクのGCSパスリストから段階的に要約を生成します（Map-Reduce）"""
     genai_client = get_genai_client()
     model_name = get_model_name()
-    print("[Gemini] EPUBコンテンツの要約を生成中...")
+    upload_bucket_id = get_upload_bucket_id()
 
+    # --- Mapフェーズ: 各HTMLチャンクの要約を並列で生成 ---
+    async def _get_intermediate_summary(html_gcs_path: str) -> str:
+        # GCSパスからファイル名部分を抽出
+        blob_name = html_gcs_path.replace(f"gs://{upload_bucket_id}/", "")
+
+        temp_html_path = None
+        try:
+            # GCSからHTMLチャンクをダウンロード
+            temp_html_path = await run_in_threadpool(
+                download_blob, upload_bucket_id, blob_name
+            )
+            with open(temp_html_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+
+            # 中間要約用のプロンプト
+            prompt = f"""
+            これは書籍の一部（1つの章またはセクション）のHTMLコンテンツです。
+            この部分の要点をまとめた「中間要約」を作成してください。
+            後で他の部分の要約と結合して、書籍全体の要約を作成します。
+            - 箇条書きで簡潔に。
+            - 日本語で出力。
+            - 前置きは不要。
+
+            【HTMLコンテンツ】
+            {html_content}
+            """
+            response = await genai_client.aio.models.generate_content(
+                model=model_name, contents=[prompt]
+            )
+            return response.text or ""
+        finally:
+            if temp_html_path and os.path.exists(temp_html_path):
+                os.remove(temp_html_path)
+
+    print(f"[Gemini] Mapフェーズ開始: {len(html_gcs_paths)}個のチャンクを要約します。")
+    intermediate_summaries = await asyncio.gather(
+        *[_get_intermediate_summary(path) for path in html_gcs_paths]
+    )
+    print("[Gemini] Mapフェーズ完了。")
+
+    # --- Reduceフェーズ: 中間要約を統合して最終的な要約を生成 ---
+    print("[Gemini] Reduceフェーズ開始: 中間要約を統合します。")
+    combined_summaries = "\n\n---\n\n".join(
+        f"【章/セクションの要約 {i + 1}】\n{s}"
+        for i, s in enumerate(intermediate_summaries)
+    )
     image_list_str = "\n".join(f"- {path}" for path in image_gcs_paths)
 
-    prompt = f"""
+    final_prompt = f"""
     あなたは優秀なドキュメントアナリストです。
-    以下のHTMLコンテンツの内容を読み取り、後でデータベースで検索した際に
-    内容が十分に把握できるレベルの「詳細な要約」を作成してください。
+    以下に、書籍の各章（またはセクション）ごとに作成された「中間要約」のリストがあります。
+    これらすべてを統合し、書籍全体の構造がわかるような「詳細な最終要約」を作成してください。
 
-    HTML内の`<img>`タグの`src`は、GCS上の画像パスに置換されています。
     要約の中で、本文中の画像について言及する必要がある場合は、
     必ず以下のリストにある対応するGCSパスを使用して、Markdown形式で画像を埋め込んでください。
 
@@ -226,27 +319,28 @@ async def generate_summary_from_epub_content(
     {image_list_str}
 
     【要件】
-    - 文書の主要なトピック、結論、重要な数値を漏らさないこと。
+    - 書籍全体の主要なトピック、議論の流れ、そして結論が明確にわかるように構成すること。
+    - 各章の要点が漏れないようにしつつ、冗長な表現は避けること。
     - 箇条書きを活用し、構造的にまとめること。
     - 日本語で出力すること。
     - 「承知しました」や「アナリストとして」などといった前置きは不要で、コンテンツの内容のみを返却すること。
 
-    【HTMLコンテンツ】
-    {content}
+    【中間要約のリスト】
+    {combined_summaries}
     """
-
-    response = await genai_client.aio.models.generate_content(
-        model=model_name,
-        contents=[prompt],
+    final_response = await genai_client.aio.models.generate_content(
+        model=model_name, contents=[final_prompt]
     )
-    return response.text if response.text is not None else ""
+    print("[Gemini] Reduceフェーズ完了。")
+
+    return final_response.text or ""
 
 
 def save_to_spanner_for_epub_content(
     file_name: str,
     gcs_uri: str,
     metadata: dict,
-    content: str,
+    html_gcs_paths: list[str],
     image_gcs_paths: list[str],
     summary: str,
 ):
@@ -259,6 +353,7 @@ def save_to_spanner_for_epub_content(
         row_id = str(uuid.uuid4())
         created_at = datetime.datetime.now(datetime.timezone.utc)
         images_json = json.dumps(image_gcs_paths)
+        html_chunks_json = json.dumps(html_gcs_paths)
 
         transaction.insert(
             table=table_name,
@@ -266,7 +361,7 @@ def save_to_spanner_for_epub_content(
                 "Id",
                 "GcsUri",
                 "FileName",
-                "Content",
+                "HtmlChunks",
                 "Images",
                 "Summary",
                 "Title",
@@ -280,7 +375,7 @@ def save_to_spanner_for_epub_content(
                     row_id,
                     gcs_uri,
                     file_name,
-                    content,
+                    html_chunks_json,
                     images_json,
                     summary,
                     metadata.get("title"),

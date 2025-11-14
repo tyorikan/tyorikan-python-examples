@@ -56,16 +56,16 @@ def mock_parse_epub():
                 "publisher": "Test Publisher",
                 "published_date": None,
             },
-            "<html><body><img src='gs://test-upload-bucket/images/test.jpg'>Test Content</body></html>",
-            ["gs://test-upload-bucket/images/test.jpg"],
+            ["gs://test-upload-bucket/html_chunks/test.html"],  # html_gcs_paths
+            ["gs://test-upload-bucket/images/test.jpg"],  # image_gcs_paths
         )
         yield mock
 
 
 @pytest.fixture
-def mock_generate_summary_from_epub_content():
-    """`epub.generate_summary_from_epub_content`関数をモック化するフィクスチャ"""
-    with patch("epub.generate_summary_from_epub_content") as mock:
+def mock_generate_summary_from_html_chunks():
+    """`epub.generate_summary_from_html_chunks`関数をモック化するフィクスチャ"""
+    with patch("epub.generate_summary_from_html_chunks") as mock:
         mock.return_value = "これはEPUBのテスト要約です。![画像](gs://test-upload-bucket/images/test.jpg)"
         yield mock
 
@@ -110,7 +110,7 @@ def test_process_storage_event_pdf_success(
 def test_process_storage_event_epub_success(
     mock_download_blob,
     mock_parse_epub,
-    mock_generate_summary_from_epub_content,
+    mock_generate_summary_from_html_chunks,
     mock_save_to_spanner_for_epub_content,
     mock_os_utils,
 ):
@@ -129,17 +129,21 @@ def test_process_storage_event_epub_success(
         "/tmp/fake_epub_path.epub", "test-upload-bucket", "test-file.epub"
     )
 
-    expected_metadata, expected_content, expected_images = mock_parse_epub.return_value
-    mock_generate_summary_from_epub_content.assert_called_once_with(
-        expected_content, expected_images
+    (
+        expected_metadata,
+        expected_html_paths,
+        expected_images,
+    ) = mock_parse_epub.return_value
+    mock_generate_summary_from_html_chunks.assert_called_once_with(
+        expected_html_paths, expected_images
     )
 
-    expected_summary = mock_generate_summary_from_epub_content.return_value
+    expected_summary = mock_generate_summary_from_html_chunks.return_value
     mock_save_to_spanner_for_epub_content.assert_called_once_with(
         "test-file.epub",
         "gs://test-bucket/path/to/test-file.epub",
         expected_metadata,
-        expected_content,
+        expected_html_paths,
         expected_images,
         expected_summary,
     )
@@ -171,11 +175,11 @@ def test_process_storage_event_pdf_generation_fails(mock_generate_summary_from_p
 
 
 def test_process_storage_event_epub_summary_fails(
-    mock_download_blob, mock_parse_epub, mock_generate_summary_from_epub_content
+    mock_download_blob, mock_parse_epub, mock_generate_summary_from_html_chunks
 ):
     """異常系: EPUB要約生成で例外が発生した場合のテスト"""
-    # `epub.handle_epub`内で呼び出される`generate_summary_from_epub_content`が例外を発生させる
-    mock_generate_summary_from_epub_content.side_effect = Exception("Gemini API error")
+    # `epub.handle_epub`内で呼び出される`generate_summary_from_html_chunks`が例外を発生させる
+    mock_generate_summary_from_html_chunks.side_effect = Exception("Gemini API error")
     event_data = {"bucket": "test-bucket", "name": "path/to/test-file.epub"}
     response = client.post("/", json=event_data)
     assert response.status_code == 500
