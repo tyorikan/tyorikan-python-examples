@@ -39,6 +39,30 @@ Eventarc を経由して GCS のイベントを Cloud Run 上のこのサービ�
 -   `bucket`: イベントが発生した GCS バケット名。
 -   `name`: 作成または更新されたオブジェクト（ファイル）名。
 
+## Cloud Spannerのテーブル定義
+
+このサービスでは、要約結果を保存するために、以下のスキーマを持つ Cloud Spanner テーブルを想定しています。
+
+-   **テーブル名**: `DocumentSummaries` （環境変数 `SPANNER_TABLE_NAME` で変更可能）
+
+### DDL
+
+```sql
+CREATE TABLE DocumentSummaries (
+  Id STRING(36) NOT NULL,
+  GcsUri STRING(MAX),
+  FileName STRING(MAX),
+  Title STRING(MAX),
+  Summary STRING(MAX),
+  HtmlChunks JSON,
+  Images JSON,
+  Author STRING(MAX),
+  Publisher STRING(MAX),
+  PublishedDate TIMESTAMP,
+  CreatedAt TIMESTAMP,
+) PRIMARY KEY(Id);
+```
+
 ## セットアップと実行
 
 ### 1. 環境変数の設定
@@ -52,7 +76,8 @@ LOCATION="your-gcp-region"
 SPANNER_INSTANCE_ID="your-spanner-instance-id"
 SPANNER_DATABASE_ID="your-spanner-database-id"
 SPANNER_TABLE_NAME="DocumentSummaries"
-MODEL_NAME="gemini-2.5-pro"
+MODEL_NAME="gemini-2.5-flash"
+UPLOAD_BUCKET_ID="your-gcs-bucket-name"
 ```
 
 ### 2. Docker を使用したローカル実行
