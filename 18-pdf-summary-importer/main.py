@@ -64,18 +64,14 @@ class StorageObjectData(BaseModel):
     name: str
 
 
-class CloudEvent(BaseModel):
-    data: StorageObjectData
-
-
 @app.post("/")
-async def process_storage_event(event: CloudEvent):
+async def process_storage_event(event: StorageObjectData):
     """
     EventarcからCloud Storageイベントを受け取り、PDF要約処理を実行します。
     """
     # GCSのオブジェクト情報を取得
-    bucket = event.data.bucket
-    name = event.data.name
+    bucket = event.bucket
+    name = event.name
     gcs_uri = f"gs://{bucket}/{name}"
     file_name = os.path.basename(name)
     print(f"[Event] 対象ファイル: {gcs_uri}")
@@ -123,7 +119,7 @@ async def generate_summary_from_gcs(gcs_uri: str) -> str:
     """
 
     response = await genai_client.aio.models.generate_content(
-        model=f"projects/{PROJECT_ID}/locations/{LOCATION}/models/{MODEL_NAME}",
+        model=MODEL_NAME,
         contents=[
             Part.from_uri(
                 file_uri=gcs_uri,
