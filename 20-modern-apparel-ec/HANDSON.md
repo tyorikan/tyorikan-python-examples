@@ -30,7 +30,7 @@
 
 あなたの `.agent/rules/user_rules.md` (またはメモリ) に、以下のようなルールが存在すると仮定（または追加）してください。
 
-````markdown
+```markdown
 # Developer Portal Design Constitution
 
 1. **Mobile First**: 全てのUIはモバイル画面での表示を最優先する。PC表示はあくまで拡張である。
@@ -52,7 +52,7 @@
 1.  `.agent/skills/doc-ui-specialist/` ディレクトリを作成します。
 2.  その中に `SKILL.md` を作成します。
 
-```markdown
+````markdown
 ---
 name: doc-ui-specialist
 description: Expert in building developer portal UIs using React & Tailwind. Focuses on readability and code presentation.
@@ -85,10 +85,9 @@ description: Expert in building developer portal UIs using React & Tailwind. Foc
 
 ## 3. Behavior
 *   新しいページを作る際は、必ず `<Layout>` コンポーネントでラップすること。
-```
+````
 
 > **Point**: これでエージェントは「アラートを表示して」という指示だけで、上記の一貫したデザインコードを出力できるようになります。
-````
 
 ---
 
