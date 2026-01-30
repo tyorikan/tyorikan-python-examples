@@ -1,0 +1,9 @@
+services:
+  spanner:
+    image: gcr.io/cloud-spanner-emulator/emulator:latest
+    container_name: spanner-emulator
+    ports:
+      - "9010:9010"
+      - "9020:9020"
+    environment:
+      - CLOUDSDK_CORE_PROJECT=test-project
