@@ -30,7 +30,7 @@
 
 あなたの `.agent/rules/user_rules.md` (またはメモリ) に、以下のようなルールが存在すると仮定（または追加）してください。
 
-```markdown
+````markdown
 # Developer Portal Design Constitution
 
 1. **Mobile First**: 全てのUIはモバイル画面での表示を最優先する。PC表示はあくまで拡張である。
@@ -88,6 +88,7 @@ description: Expert in building developer portal UIs using React & Tailwind. Foc
 ```
 
 > **Point**: これでエージェントは「アラートを表示して」という指示だけで、上記の一貫したデザインコードを出力できるようになります。
+````
 
 ---
 
