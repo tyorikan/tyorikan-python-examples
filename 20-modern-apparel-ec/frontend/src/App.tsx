@@ -4,6 +4,7 @@ import { Layout } from './components/layout/Layout';
 import { Home } from './features/home/routes/Home';
 import { CategoryPage } from './pages/CategoryPage';
 import { ProductPage } from './pages/ProductPage';
+import { AuthenticationPage } from './pages/docs/AuthenticationPage';
 
 // Scroll to top on navigation to fix "router not working correctly" behavior
 const ScrollToTop = () => {
@@ -25,6 +26,7 @@ function App() {
           <Route path="new" element={<CategoryPage />} />
           <Route path="products/:productId" element={<ProductPage />} />
           <Route path="cart" element={<div className='p-8'>Cart Page (TODO)</div>} />
+          <Route path="docs/authentication" element={<AuthenticationPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
