@@ -1,31 +1,15 @@
 import { Hero } from '../components/Hero';
-import { ProductCard } from '../../products/components/ProductCard'; // Assuming this will be created
+import { ProductCard } from '../../products/components/ProductCard';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// Placeholder data for prototyping
-const TRENDING_PRODUCTS = [
-  {
-    product_id: "1",
-    name: "Oversized Merino Tee",
-    base_price: 4500,
-    category_id: "Tops"
-  },
-  {
-    product_id: "2",
-    name: "Pleated Wide Trousers",
-    base_price: 8900,
-    category_id: "Bottoms"
-  },
-  {
-    product_id: "3",
-    name: "Technical Utility Jacket",
-    base_price: 15000,
-    category_id: "Outerwear"
-  },
-];
+import { useProducts } from '../../catalog/api/getProducts';
 
 export const Home = () => {
+  const { data: products, isLoading, error } = useProducts();
+
+  // Pick top 3 products for the trending section
+  const trendingProducts = products?.slice(0, 3) || [];
+
   return (
     <div className="flex flex-col space-y-0">
       <Hero />
@@ -40,11 +24,31 @@ export const Home = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {TRENDING_PRODUCTS.map((product) => (
-              <ProductCard key={product.product_id} product={product} />
-            ))}
-          </div>
+          {isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="aspect-[3/4] bg-muted" />
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="py-12 text-center">
+              <p className="text-red-500 font-bold uppercase tracking-widest">Error loading pieces</p>
+            </div>
+          )}
+
+          {!isLoading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {trendingProducts.map((product) => (
+                <ProductCard key={product.product_id} product={product} />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && !error && trendingProducts.length === 0 && (
+            <p className="text-center text-muted-foreground uppercase tracking-widest py-12">No pieces found</p>
+          )}
         </div>
       </section>
 

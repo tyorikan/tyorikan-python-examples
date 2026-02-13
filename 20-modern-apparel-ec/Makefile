@@ -1,10 +1,17 @@
-.PHONY: spanner-up spanner-down backend frontend
+.PHONY: spanner-up spanner-down spanner-init backend frontend
 
 spanner-up:
-	docker compose up -d
+	podman-compose up -d
 
 spanner-down:
-	docker compose down
+	podman-compose down
+
+spanner-init:
+	export SPANNER_EMULATOR_HOST=localhost:9010 && \
+	export GOOGLE_CLOUD_PROJECT=test-project && \
+	export SPANNER_INSTANCE=test-instance && \
+	export SPANNER_DATABASE=test-database && \
+	./backend/scripts/setup_db.sh
 
 backend:
 	export SPANNER_EMULATOR_HOST=localhost:9010 && \
