@@ -41,3 +41,12 @@ CREATE TABLE OrderItems (
     UnitPrice INT64
 ) PRIMARY KEY (OrderId, ItemId),
   INTERLEAVE IN PARENT Orders ON DELETE CASCADE;
+
+CREATE TABLE CartItems (
+    UserId STRING(36) NOT NULL,
+    ProductId STRING(36) NOT NULL,
+    VariantId STRING(36) NOT NULL,
+    Quantity INT64 NOT NULL,
+    UpdatedAt TIMESTAMP NOT NULL
+) PRIMARY KEY (UserId, ProductId, VariantId),
+  INTERLEAVE IN PARENT Users ON DELETE CASCADE;

@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useProduct } from '../features/catalog/api/getProduct';
-import { ChevronRight, Minus, Plus, ShoppingBag, Truck, ShieldCheck, RotateCcw } from 'lucide-react';
+import { useAddToCart } from '../features/cart/api/cart';
+import { ChevronRight, Minus, Plus, ShoppingBag, Truck, ShieldCheck, RotateCcw, Loader2, Check } from 'lucide-react';
 
 export const ProductPage = () => {
     const { productId } = useParams();
@@ -10,6 +11,26 @@ export const ProductPage = () => {
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [quantity, setQuantity] = useState(1);
+    const addToCartMutation = useAddToCart();
+
+    const handleAddToCart = () => {
+        if (!product || !selectedColor || !selectedSize) {
+            alert('Please select color and size');
+            return;
+        }
+
+        const variant = product.variants.find(
+            v => v.color === selectedColor && v.size === selectedSize
+        );
+
+        if (variant) {
+            addToCartMutation.mutate({
+                product_id: product.product_id,
+                variant_id: variant.variant_id,
+                quantity: quantity
+            });
+        }
+    };
 
     if (isLoading) return (
         <div className="min-h-screen flex items-center justify-center">
@@ -143,8 +164,19 @@ export const ProductPage = () => {
 
                         {/* Actions */}
                         <div className="space-y-4 pt-4">
-                            <button className="w-full h-16 bg-black text-white text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black/90 transition-all">
-                                <ShoppingBag className="w-5 h-5" /> Add to Cart
+                            <button 
+                                onClick={handleAddToCart}
+                                disabled={addToCartMutation.isPending}
+                                className="w-full h-16 bg-black text-white text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black/90 transition-all disabled:bg-slate-400"
+                            >
+                                {addToCartMutation.isPending ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : addToCartMutation.isSuccess ? (
+                                    <Check className="w-5 h-5" />
+                                ) : (
+                                    <ShoppingBag className="w-5 h-5" />
+                                )}
+                                {addToCartMutation.isSuccess ? 'Added to Cart' : 'Add to Cart'}
                             </button>
                             <button className="w-full h-16 border border-black text-black text-xs font-bold uppercase tracking-[0.2em] hover:bg-black hover:text-white transition-all">
                                 Buy It Now

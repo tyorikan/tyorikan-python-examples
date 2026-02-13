@@ -1,6 +1,6 @@
 from typing import List, Optional
 from app.db.repositories.product import ProductRepository
-from app.models.domain import Product
+from app.models.domain.product import Product
 
 class ProductService:
     def __init__(self, repository: ProductRepository):

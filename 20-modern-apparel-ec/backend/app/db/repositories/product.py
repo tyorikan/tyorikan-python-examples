@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from google.cloud import spanner
 from app.db.repositories.base import BaseRepository
-from app.models.domain import Product, ProductVariant
+from app.models.domain.product import Product, ProductVariant
 
 class ProductRepository(BaseRepository):
     def list_products(self, limit: int = 10, offset: int = 0) -> List[Product]:

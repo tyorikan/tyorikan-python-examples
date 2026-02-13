@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Check, Loader2 } from 'lucide-react';
+import { useAddToCart } from '../../cart/api/cart';
 
 interface ProductCardProps {
   product: {
@@ -8,10 +9,30 @@ interface ProductCardProps {
     base_price: number;
     category_id: string;
     description?: string;
+    variants?: Array<{
+      variant_id: string;
+      color: string;
+      size: string;
+    }>;
   };
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const addToCartMutation = useAddToCart();
+  
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const variantId = product.variants?.[0]?.variant_id;
+    if (variantId) {
+      addToCartMutation.mutate({ 
+        product_id: product.product_id, 
+        variant_id: variantId, 
+        quantity: 1 
+      });
+    }
+  };
   // Map internal business data to UI display
   const { product_id: id, name, base_price: price, category_id: category } = product;
   
@@ -31,8 +52,18 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         {/* Overlay / Quick Add */}
         <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
         
-        <button className="absolute bottom-4 right-4 p-3 bg-white text-black opacity-0 translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-black hover:text-white">
-          <Plus className="w-5 h-5" />
+        <button 
+          onClick={handleAddToCart}
+          disabled={addToCartMutation.isPending}
+          className="absolute bottom-4 right-4 p-3 bg-white text-black opacity-0 translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-black hover:text-white disabled:bg-slate-100 disabled:text-slate-400"
+        >
+          {addToCartMutation.isPending ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : addToCartMutation.isSuccess ? (
+            <Check className="w-5 h-5 text-green-600" />
+          ) : (
+            <Plus className="w-5 h-5" />
+          )}
         </button>
         
         {/* Badge */}

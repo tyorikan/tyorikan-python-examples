@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.db.spanner import init_spanner
 from app.api.products import router as product_router
+from app.api.cart import router as cart_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(product_router, prefix="/api/products", tags=["products"])
+app.include_router(cart_router, prefix="/api/cart", tags=["cart"])
 
 @app.get("/health")
 def health_check():
