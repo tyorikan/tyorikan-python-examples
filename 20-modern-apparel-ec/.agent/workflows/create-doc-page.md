@@ -2,21 +2,20 @@
 description: ポータルサイトに新しいドキュメントページを追加するフロー
 ---
 
-# Create Documentation Page Workflow
+# ドキュメントページ作成ワークフロー
 
-新しい解説ページを追加する際は、以下のステップを実行してください。
+新しい解説ページを追加する際は、以下のステップを実行する。
 
-## Phase 1: Blueprint (構成案)
-1.  **構成作成**: ユーザーの要望から、ページの構成案（Main Heading, Sub Sections）を提案する。
-2.  **ファイル決定**: ファイルパス（例: `src/pages/docs/xxx.tsx`）を決定する。
+## 1. 構成案の作成
+1. ユーザーの要望から、ページの構成案（メイン見出し、サブセクション）を提案する。
+2. ファイルパスを決定する（例: `src/pages/docs/xxx.tsx`）。
 
-## Phase 2: Construction (実装)
+## 2. 実装
 // turbo
-1.  **スキル召喚**: `doc-ui-specialist` スキルを活用し、UIを実装する。
-    *   **重要**: ここで必ず SKILL.md のカラーパレットとコンポーネントパターンを守ること。
-2.  **ルーティング**: `App.tsx` またはルーター設定に新しいパスを追加する。
+1. `.agent/skills/developing-frontend/resources/design-system.md` のカラーパレットとコンポーネントパターンに従って UI を実装する。
+// turbo
+2. `App.tsx` またはルーター設定に新しいパスを追加する。
 
-## Phase 3: Mobile Inspection (検証)
-1.  **Rule Check**: 作成したコードが「Mobile First」ルール（Step 1で定義）を守れているか自己レビューする。
-    *   `flex-col` (mobile) -> `md:flex-row` (desktop) のパターンになっているか？
-2.  **報告**: 完了報告をする。
+## 3. 検証
+1. 作成したコードが「Mobile First」ルールを守れているか自己レビューする（`flex-col` → `md:flex-row` のパターン）。
+2. 完了報告をする。
