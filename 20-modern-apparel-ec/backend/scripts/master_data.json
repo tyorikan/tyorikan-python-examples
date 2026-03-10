@@ -1,0 +1,92 @@
+[
+  {
+    "category": "Men",
+    "items": [
+      {
+        "name": "Ultra Stretch Chino Pants",
+        "price": 4900,
+        "desc": "Comfortable stretch fabric for daily urban life."
+      },
+      {
+        "name": "Merino Wool V-Neck Sweater",
+        "price": 3900,
+        "desc": "Fine merino wool with a premium texture."
+      },
+      {
+        "name": "Oxford Slim Fit Shirt",
+        "price": 2900,
+        "desc": "Classic silhouette made from high-quality cotton."
+      },
+      {
+        "name": "Technical Parka",
+        "price": 12800,
+        "desc": "Water-repellent and windproof for outdoor performance."
+      },
+      {
+        "name": "Seamless Down Coat",
+        "price": 19900,
+        "desc": "Ultimate warmth with a minimalist design."
+      }
+    ]
+  },
+  {
+    "category": "Women",
+    "items": [
+      {
+        "name": "Cashmere Crew Neck Sweater",
+        "price": 9900,
+        "desc": "100% cashmere for unrivaled softness."
+      },
+      {
+        "name": "High Rise Wide Jeans",
+        "price": 4900,
+        "desc": "Modern silhouette with premium denim."
+      },
+      {
+        "name": "Rayon Bow Tie Blouse",
+        "price": 2900,
+        "desc": "Elegant and easy-care for professional looks."
+      },
+      {
+        "name": "Pleated Accordion Skirt",
+        "price": 3900,
+        "desc": "Dynamic movement with sharp pleats."
+      },
+      {
+        "name": "Linen Blend Open Collar Shirt",
+        "price": 2900,
+        "desc": "Breathable and cool for summer days."
+      }
+    ]
+  },
+  {
+    "category": "Accessories",
+    "items": [
+      {
+        "name": "Leather Minimalist Wallet",
+        "price": 5800,
+        "desc": "Supple leather with a compact design."
+      },
+      {
+        "name": "Tech Backpack Layer 1",
+        "price": 8900,
+        "desc": "Ergonomic design with laptop compartment."
+      },
+      {
+        "name": "Cashmere Knit Scarf",
+        "price": 4900,
+        "desc": "Soft warmth for colder seasons."
+      },
+      {
+        "name": "Urban Canvas Tote",
+        "price": 1900,
+        "desc": "Heavy-duty canvas for daily use."
+      },
+      {
+        "name": "Modular Waist Bag",
+        "price": 3500,
+        "desc": "Versatile storage for city commuters."
+      }
+    ]
+  }
+]
